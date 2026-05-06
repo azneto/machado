@@ -5,6 +5,7 @@
 # have been included as part of this package for licensing information.
 
 """Load publication file."""
+
 import re
 
 from machado.models import Pub, PubDbxref, Pubauthor, Cvterm, Cv, Dbxref, Db

@@ -5,6 +5,7 @@
 # have been included as part of this package for licensing information.
 
 """Search indexes."""
+
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q

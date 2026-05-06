@@ -18,7 +18,6 @@ from machado.models import FeatureCvterm, FeatureDbxref, FeaturePub
 from machado.models import Featureprop, FeaturepropPub, FeatureSynonym
 from machado.models import Pub, PubDbxref, Synonym
 
-
 # The following attributes are handled in a specific manner and should not
 # be included in VALID_GFF_ATTRS: id, name, and parent
 VALID_GENOME_ATTRS = [

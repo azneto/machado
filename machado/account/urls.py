@@ -10,7 +10,6 @@ from django.urls import path
 
 from machado.account import views as userViews
 
-
 urlpatterns = [
     # PublicUserActions para criação de conta e login (não exige autenticação)
     path(
