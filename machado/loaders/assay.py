@@ -113,7 +113,7 @@ class AssayLoader(object):
     ) -> None:
         """Store assay_biomaterial."""
         try:
-            (assaybiomaterial, created) = AssayBiomaterial.objects.get_or_create(
+            assaybiomaterial, created = AssayBiomaterial.objects.get_or_create(
                 assay=assay,
                 biomaterial=biomaterial,
                 rank=rank,

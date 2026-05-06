@@ -30,7 +30,6 @@ from machado.models import History
 
 from re import escape, search, IGNORECASE
 
-
 try:
     CACHE_TIMEOUT = settings.CACHE_TIMEOUT
 except AttributeError:

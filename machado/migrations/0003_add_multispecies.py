@@ -5,6 +5,7 @@
 # have been included as part of this package for licensing information.
 
 """Create database from chado default_schema.sql."""
+
 from django.db import migrations
 
 

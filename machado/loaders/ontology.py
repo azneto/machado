@@ -5,6 +5,7 @@
 # have been included as part of this package for licensing information.
 
 """Ontology."""
+
 import re
 from multiprocessing.synchronize import Lock
 from typing import Any, Dict, Optional

@@ -15,7 +15,6 @@ from drf_yasg import openapi
 from machado.api.views import read as readViews
 from machado.api.views import load as loadViews
 
-
 router = routers.SimpleRouter(trailing_slash=False)
 
 # readViews
