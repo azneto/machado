@@ -15,11 +15,7 @@ from machado.models import Analysis, Analysisfeature
 from machado.models import Feature, FeatureCvterm, FeatureDbxref, Featureprop
 from machado.models import Featureloc, FeatureRelationship
 
-VALID_PROGRAMS = (
-    Analysis.objects.filter(program__in=["interproscan", "diamond", "blast"])
-    .distinct("program")
-    .values_list("program")
-)
+VALID_PROGRAMS = ["interproscan", "diamond", "blast"]
 
 OVERLAPPING_FEATURES = ["SNV", "QTL", "copy_number_variation"]
 
@@ -37,27 +33,56 @@ class FeatureIndex(indexes.SearchIndex, indexes.Indexable):
     display = indexes.CharField(faceted=True, null=True)
     doi = indexes.MultiValueField(faceted=True)
     relationship = indexes.MultiValueField(indexed=False)
-    if Featureprop.objects.filter(
-        type__name="orthologous group", type__cv__name="feature_property"
-    ).exists():
-        orthology = indexes.BooleanField(faceted=True)
-        orthologous_group = indexes.CharField(faceted=True)
-    if Featureprop.objects.filter(
-        type__name="coexpression group", type__cv__name="feature_property"
-    ).exists():
-        coexpression = indexes.BooleanField(faceted=True)
-        coexpression_group = indexes.CharField(faceted=True)
+    orthology = indexes.BooleanField(faceted=True, null=True)
+    orthologous_group = indexes.CharField(faceted=True, null=True)
+    coexpression = indexes.BooleanField(faceted=True, null=True)
+    coexpression_group = indexes.CharField(faceted=True, null=True)
     biomaterial = indexes.MultiValueField(faceted=True)
     treatment = indexes.MultiValueField(faceted=True)
     # orthologs_biomaterial = indexes.MultiValueField(faceted=True)
     orthologs_coexpression = indexes.MultiValueField(faceted=True)
 
     def __init__(self):
-        """Check for overlapping features."""
-        self.has_overlapping_features = Feature.objects.filter(
-            type__name__in=OVERLAPPING_FEATURES
-        ).exists()
+        """Initialize index."""
         super().__init__()
+        self._has_overlapping_features = None
+        self._valid_programs = None
+
+    @property
+    def has_overlapping_features(self):
+        """Check for overlapping features lazily."""
+        if self._has_overlapping_features is None:
+            try:
+                self._has_overlapping_features = Feature.objects.filter(
+                    type__name__in=OVERLAPPING_FEATURES
+                ).exists()
+            except Exception:
+                self._has_overlapping_features = False
+        return self._has_overlapping_features
+
+    @has_overlapping_features.setter
+    def has_overlapping_features(self, value):
+        """Allow setting overlapping features for testing."""
+        self._has_overlapping_features = value
+
+    @property
+    def valid_programs(self):
+        """Retrieve valid programs from database lazily."""
+        if self._valid_programs is None:
+            try:
+                self._valid_programs = list(
+                    Analysis.objects.filter(program__in=VALID_PROGRAMS)
+                    .distinct("program")
+                    .values_list("program")
+                )
+            except Exception:
+                self._valid_programs = []
+        return self._valid_programs
+
+    @valid_programs.setter
+    def valid_programs(self, value):
+        """Allow setting valid programs for testing."""
+        self._valid_programs = value
 
     def get_model(self):
         """Get model."""
@@ -103,7 +128,7 @@ class FeatureIndex(indexes.SearchIndex, indexes.Indexable):
             .distinct()
         )
         result = list()
-        for i in list(VALID_PROGRAMS):
+        for i in list(self.valid_programs):
             if i in list(match_part_programs):
                 result.append("{} matches".format(i[0]))
             else:

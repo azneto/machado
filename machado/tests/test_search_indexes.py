@@ -79,11 +79,11 @@ class FeatureIndexTest(TestCase):
             self.index.prepare_organism(self.feature), "Genus species infra"
         )
 
-    @patch("machado.search_indexes.VALID_PROGRAMS", [("blast",)])
     @patch("machado.search_indexes.Featureloc.objects.filter")
     @patch("machado.search_indexes.Analysisfeature.objects.filter")
     def test_prepare_analyses(self, mock_af_filter, mock_fl_filter):
         """Test prepare analyses."""
+        self.index.valid_programs = [("blast",)]
         mock_fl_filter.return_value.filter.return_value.filter.return_value.filter.return_value.values_list.return_value = [
             1
         ]
