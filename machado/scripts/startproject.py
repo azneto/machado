@@ -128,6 +128,10 @@ def main():
     env_path = target / ".env"
     if not env_path.exists() or args.overwrite:
         secret_key = _get_random_secret_key()
+        # Avoid leading '$' which triggers django-environ variable expansion
+        while secret_key.startswith("$"):
+            secret_key = _get_random_secret_key()
+
         env_content = _ENV_EXAMPLE.replace(
             "SECRET_KEY=change-me-to-a-random-string",
             f"SECRET_KEY={secret_key}",

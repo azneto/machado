@@ -18,6 +18,7 @@ env = environ.Env(
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
 )
+env.escape_proxy = True
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 # ── Core ─────────────────────────────────────────────────────────────────────
