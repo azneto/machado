@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "machado"
+version = "0.7.0"
+description = "This library provides users with a framework to store, search and visualize biological data."
+readme = "README.md"
+license = "GPL-3.0-only"
+requires-python = ">=3.11"
+authors = [
+    { name = "LMB" },
+]
+classifiers = [
+    "Environment :: Console",
+    "Framework :: Django :: 5.2",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "django~=5.2",
+    "django-environ~=0.12.0",
+    "psycopg2-binary~=2.9.12",
+    "networkx~=3.6",
+    "obonet~=1.1.1",
+    "biopython~=1.87",
+    "tqdm~=4.67.3",
+    "bibtexparser~=1.4.4",
+    "djangorestframework~=3.15.2",
+    "drf-yasg~=1.21.15",
+    "drf-nested-routers~=0.95.0",
+    "pysam~=0.24.0",
+    "django-haystack~=3.3.0",
+]
+
+[project.scripts]
+machado-startproject = "machado.scripts.startproject:main"
+
+[project.urls]
+Homepage = "https://github.com/lmb-embrapa/machado"
+Repository = "https://github.com/lmb-embrapa/machado"
+
+[tool.setuptools]
+zip-safe = false
+script-files = ["bin/fixChadoModel.py"]
+
+[tool.setuptools.packages.find]
+include = ["machado*"]
+
+[tool.setuptools.package-data]
+machado = ["schemas/**/*.sql", "static/**/*", "templates/**/*", "tests/data/**/*", "project_template/**/*"]
+
+[tool.coverage.run]
+branch = true
+source = ["machado"]
+omit = [
+    "bin/*",
+    "docs/*",
+    "extras/*",
+    "machado/migrations/*",
+    "machado/schemas/*",
+    "machado/static/*",
+    "machado/tests/*",
+    "machado/management/*",
+]
+
+[tool.flake8]
+ignore = ["E501", "W503", "D100", "D101", "D104", "D106"]
