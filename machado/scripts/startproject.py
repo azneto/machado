@@ -7,12 +7,10 @@
 """Bootstrap a new machado project with pre-configured Django settings."""
 
 import argparse
-import os
 import shutil
 import stat
 import sys
 from pathlib import Path
-
 
 # ── .env template ────────────────────────────────────────────────────────────
 _ENV_EXAMPLE = """\
