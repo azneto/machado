@@ -73,16 +73,25 @@ def main():
         action="store_true",
         help="Overwrite existing files in the target directory.",
     )
+    parser.add_argument(
+        "--verbosity",
+        type=int,
+        choices=[0, 1, 2],
+        default=1,
+        help="Verbosity level: 0=silent, 1=normal, 2=verbose (default: 1).",
+    )
     args = parser.parse_args()
+    verbose = args.verbosity >= 1
 
     target = Path(args.directory).resolve()
     template = Path(__file__).resolve().parent.parent / "project_template"
 
     if not template.is_dir():
-        print(
-            f"Error: project template not found at {template}",
-            file=sys.stderr,
-        )
+        if verbose:
+            print(
+                f"Error: project template not found at {template}",
+                file=sys.stderr,
+            )
         sys.exit(1)
 
     # ── Copy template files ──────────────────────────────────────────────────
@@ -99,18 +108,21 @@ def main():
         dest = target / rel
 
         if dest.exists() and not args.overwrite:
-            print(f"  skip (exists): {rel}")
+            if verbose:
+                print(f"  skip (exists): {rel}")
             continue
 
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src_path, dest)
-        print(f"  created: {rel}")
+        if verbose:
+            print(f"  created: {rel}")
 
     # ── Write .env.example ───────────────────────────────────────────────────
     env_example_path = target / ".env.example"
     if not env_example_path.exists() or args.overwrite:
         env_example_path.write_text(_ENV_EXAMPLE)
-        print("  created: .env.example")
+        if verbose:
+            print("  created: .env.example")
 
     # ── Write .env with generated SECRET_KEY ─────────────────────────────────
     env_path = target / ".env"
@@ -121,7 +133,8 @@ def main():
             f"SECRET_KEY={secret_key}",
         )
         env_path.write_text(env_content)
-        print("  created: .env (with generated SECRET_KEY)")
+        if verbose:
+            print("  created: .env (with generated SECRET_KEY)")
 
     # ── Make manage.py executable ────────────────────────────────────────────
     manage_py = target / "manage.py"
@@ -129,7 +142,8 @@ def main():
         manage_py.chmod(manage_py.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
 
     # ── Print next steps ─────────────────────────────────────────────────────
-    print(f"""
+    if verbose:
+        print(f"""
   ✓ machado project created at: {target}
 
   Next steps:

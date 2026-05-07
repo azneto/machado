@@ -10,7 +10,7 @@ from machado.scripts.startproject import main
 class StartProjectScriptTest(unittest.TestCase):
     def test_main(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            test_args = ["machado-startproject", tmpdir]
+            test_args = ["machado-startproject", tmpdir, "--verbosity=0"]
             with patch.object(sys, "argv", test_args):
                 main()
             
@@ -21,7 +21,7 @@ class StartProjectScriptTest(unittest.TestCase):
 
     def test_main_overwrite(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            test_args = ["machado-startproject", tmpdir]
+            test_args = ["machado-startproject", tmpdir, "--verbosity=0"]
             with patch.object(sys, "argv", test_args):
                 main()
             
@@ -30,7 +30,9 @@ class StartProjectScriptTest(unittest.TestCase):
                 main()
             
             # Running with --overwrite
-            test_args_overwrite = ["machado-startproject", tmpdir, "--overwrite"]
+            test_args_overwrite = [
+                "machado-startproject", tmpdir, "--overwrite", "--verbosity=0",
+            ]
             with patch.object(sys, "argv", test_args_overwrite):
                 main()
             
