@@ -8,7 +8,7 @@
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.test import TestCase, override_settings
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock
 
 from machado.decorators import (
     get_feature_dbxrefs,
@@ -118,7 +118,9 @@ class GetFeatureAnnotationTest(TestCase):
     def test_annotation_with_doi(self):
         mock_fp = MagicMock()
         mock_fp.value = "Annotation text"
-        mock_fp.FeaturepropPub_featureprop_Featureprop.get.return_value.pub.get_doi.return_value = "10.1234/test"
+        mock_fp.FeaturepropPub_featureprop_Featureprop.get.return_value.pub.get_doi.return_value = (
+            "10.1234/test"
+        )
 
         mock_self = MagicMock()
         mock_self.Featureprop_feature_Feature.filter.return_value = [mock_fp]
@@ -130,7 +132,9 @@ class GetFeatureAnnotationTest(TestCase):
     def test_annotation_without_doi(self):
         mock_fp = MagicMock()
         mock_fp.value = "Annotation text"
-        mock_fp.FeaturepropPub_featureprop_Featureprop.get.side_effect = ObjectDoesNotExist
+        mock_fp.FeaturepropPub_featureprop_Featureprop.get.side_effect = (
+            ObjectDoesNotExist
+        )
 
         mock_self = MagicMock()
         mock_self.Featureprop_feature_Feature.filter.return_value = [mock_fp]
@@ -154,7 +158,9 @@ class GetFeatureDoiTest(TestCase):
         mock_featurepub.pub.get_doi.return_value = "10.1234/pub"
 
         mock_fp = MagicMock()
-        mock_fp.FeaturepropPub_featureprop_Featureprop.get.return_value.pub.get_doi.return_value = "10.1234/annot"
+        mock_fp.FeaturepropPub_featureprop_Featureprop.get.return_value.pub.get_doi.return_value = (
+            "10.1234/annot"
+        )
 
         mock_self = MagicMock()
         mock_self.FeaturePub_feature_Feature.filter.return_value = [mock_featurepub]
@@ -169,7 +175,9 @@ class GetFeatureDoiTest(TestCase):
         mock_featurepub.pub.get_doi.return_value = "10.1234/pub"
 
         mock_fp = MagicMock()
-        mock_fp.FeaturepropPub_featureprop_Featureprop.get.side_effect = ObjectDoesNotExist
+        mock_fp.FeaturepropPub_featureprop_Featureprop.get.side_effect = (
+            ObjectDoesNotExist
+        )
 
         mock_self = MagicMock()
         mock_self.FeaturePub_feature_Feature.filter.return_value = [mock_featurepub]
@@ -326,7 +334,9 @@ class GetFeatureExpressionSamplesTest(TestCase):
 
     def test_samples_not_found(self):
         mock_self = MagicMock()
-        mock_self.Analysisfeature_feature_Feature.annotate.side_effect = ObjectDoesNotExist
+        mock_self.Analysisfeature_feature_Feature.annotate.side_effect = (
+            ObjectDoesNotExist
+        )
 
         result = get_feature_expression_samples(mock_self)
         self.assertIsNone(result)
@@ -383,6 +393,7 @@ class GetFeatureRelationshipTest(TestCase):
         with self.settings():
             # Remove MACHADO_VALID_TYPES from settings
             from django.conf import settings
+
             if hasattr(settings, "MACHADO_VALID_TYPES"):
                 delattr(settings, "MACHADO_VALID_TYPES")
             with self.assertRaises(AttributeError):
@@ -459,6 +470,7 @@ class GetFeatureLocationTest(TestCase):
     def test_location_default_tracks_and_offset(self):
         """Test defaults when MACHADO_JBROWSE_TRACKS and MACHADO_JBROWSE_OFFSET are not set."""
         from django.conf import settings
+
         if hasattr(settings, "MACHADO_JBROWSE_TRACKS"):
             delattr(settings, "MACHADO_JBROWSE_TRACKS")
         if hasattr(settings, "MACHADO_JBROWSE_OFFSET"):
@@ -486,6 +498,7 @@ class GetFeatureLocationTest(TestCase):
     def test_location_no_jbrowse_url(self):
         """When MACHADO_JBROWSE_URL is not set, jbrowse_url should be None."""
         from django.conf import settings
+
         if hasattr(settings, "MACHADO_JBROWSE_URL"):
             delattr(settings, "MACHADO_JBROWSE_URL")
 
@@ -566,7 +579,9 @@ class GetPubDoiTest(TestCase):
         mock_pub_dbxref.dbxref.accession = "10.1234/test"
 
         mock_self = MagicMock()
-        mock_self.PubDbxref_pub_Pub.filter.return_value.first.return_value = mock_pub_dbxref
+        mock_self.PubDbxref_pub_Pub.filter.return_value.first.return_value = (
+            mock_pub_dbxref
+        )
 
         result = get_pub_doi(mock_self)
         self.assertEqual(result, "10.1234/test")

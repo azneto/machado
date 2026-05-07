@@ -2,6 +2,7 @@ from django.test import TestCase, RequestFactory
 from machado.views.search import FeatureSearchView, FeatureSearchExportView
 from unittest.mock import patch, MagicMock
 
+
 class SearchViewsTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
@@ -17,9 +18,9 @@ class SearchViewsTest(TestCase):
         request = self.factory.get("/find/?q=test&order_by=name&records=10")
         view = FeatureSearchView()
         view.request = request
-        
-        qs = view.get_queryset()
-        
+
+        view.get_queryset()
+
         # Verify pagination and order_by
         self.assertEqual(view.paginate_by, "10")
         self.assertTrue(mock_qs.facet.called)
@@ -35,21 +36,23 @@ class SearchViewsTest(TestCase):
         request = self.factory.get("/find/")
         view = FeatureSearchView()
         view.request = request
-        
-        qs = view.get_queryset()
-        
+
+        view.get_queryset()
+
         self.assertEqual(view.paginate_by, 50)
         self.assertTrue(mock_qs.facet.called)
 
     @patch("machado.views.search.FacetedSearchView.get_context_data")
     def test_feature_search_view_get_context_data(self, mock_super_get_context):
         mock_super_get_context.return_value = {}
-        
+
         view = FeatureSearchView()
-        view.get_form_kwargs = MagicMock(return_value={"selected_facets": ["so_term:gene", "other:val"]})
-        
+        view.get_form_kwargs = MagicMock(
+            return_value={"selected_facets": ["so_term:gene", "other:val"]}
+        )
+
         context = view.get_context_data()
-        
+
         self.assertEqual(context["so_term_count"], 1)
         self.assertIn("so_term", context["selected_facets_fields"])
         self.assertIn("other", context["selected_facets_fields"])
@@ -57,21 +60,27 @@ class SearchViewsTest(TestCase):
     @patch("machado.views.search.FacetedSearchView.get_context_data")
     def test_feature_search_export_view_get_context_data(self, mock_super_get_context):
         mock_super_get_context.return_value = {}
-        
+
         view = FeatureSearchExportView()
-        view.get_form_kwargs = MagicMock(return_value={"data": {"export": "fasta"}, "selected_facets": []})
-        
+        view.get_form_kwargs = MagicMock(
+            return_value={"data": {"export": "fasta"}, "selected_facets": []}
+        )
+
         context = view.get_context_data()
         self.assertEqual(context["file_format"], "fasta")
         self.assertEqual(view.file_format, "fasta")
 
     @patch("machado.views.search.FacetedSearchView.get_context_data")
-    def test_feature_search_export_view_get_context_data_default(self, mock_super_get_context):
+    def test_feature_search_export_view_get_context_data_default(
+        self, mock_super_get_context
+    ):
         mock_super_get_context.return_value = {}
-        
+
         view = FeatureSearchExportView()
-        view.get_form_kwargs = MagicMock(return_value={"data": {}, "selected_facets": []})
-        
+        view.get_form_kwargs = MagicMock(
+            return_value={"data": {}, "selected_facets": []}
+        )
+
         context = view.get_context_data()
         self.assertEqual(context["file_format"], "tsv")
 
@@ -79,11 +88,14 @@ class SearchViewsTest(TestCase):
     def test_feature_search_export_view_dispatch(self, mock_super_dispatch):
         mock_response = {}
         mock_super_dispatch.return_value = mock_response
-        
+
         view = FeatureSearchExportView()
         view.file_format = "fasta"
-        
+
         request = self.factory.get("/export/")
         response = view.dispatch(request)
-        
-        self.assertEqual(response["Content-Disposition"], 'attachment; filename="machado_search_results.fasta"')
+
+        self.assertEqual(
+            response["Content-Disposition"],
+            'attachment; filename="machado_search_results.fasta"',
+        )

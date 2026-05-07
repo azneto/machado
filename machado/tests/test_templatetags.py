@@ -43,7 +43,8 @@ class MachadoExtrasTest(TestCase):
             "selected_facets=organism:Arabidopsis thaliana"
         )
         context = {"request": request}
-        result = machado_extras.remove_facet(context, "organism")
+        machado_extras.remove_facet(context, "organism")
+
     def test_param_replace_order_by(self):
         """Tests - param_replace order_by."""
         request = self.factory.get("/find/?q=&order_by=name")
@@ -68,7 +69,9 @@ class MachadoExtrasTest(TestCase):
             "selected_facets=organism:Arabidopsis thaliana"
         )
         context = {"request": request}
-        result = machado_extras.remove_facet_field(context, "organism:Arabidopsis thaliana")
+        result = machado_extras.remove_facet_field(
+            context, "organism:Arabidopsis thaliana"
+        )
         self.assertEqual("q=&selected_facets=so_term_exact%3Agene", result)
 
     def test_get_item(self):

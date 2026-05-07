@@ -11,7 +11,18 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from machado.loaders.sequence import SequenceLoader
 from machado.loaders.exceptions import ImportingError
-from machado.models import Organism, Db, Dbxref, Cv, Cvterm, Pub, PubDbxref, Feature, FeaturePub
+from machado.models import (
+    Organism,
+    Db,
+    Dbxref,
+    Cv,
+    Cvterm,
+    Pub,
+    PubDbxref,
+    Feature,
+    FeaturePub,
+)
+
 
 class SequenceLoaderTest(TestCase):
     def setUp(self):
@@ -19,16 +30,24 @@ class SequenceLoaderTest(TestCase):
         self.db_rel = Cv.objects.create(name="relationship")
         self.db_seq = Cv.objects.create(name="sequence")
         self.db_internal = Db.objects.create(name="internal")
-        self.dbxref_loc = Dbxref.objects.create(db=self.db_internal, accession="located_in")
+        self.dbxref_loc = Dbxref.objects.create(
+            db=self.db_internal, accession="located_in"
+        )
         self.cvterm_loc = Cvterm.objects.get_or_create(
-            name="located in", cv=self.db_rel, dbxref=self.dbxref_loc,
-            is_obsolete=0, is_relationshiptype=1
+            name="located in",
+            cv=self.db_rel,
+            dbxref=self.dbxref_loc,
+            is_obsolete=0,
+            is_relationshiptype=1,
         )[0]
-        
+
         self.dbxref_gene = Dbxref.objects.create(db=self.db_internal, accession="gene")
         self.cvterm_gene = Cvterm.objects.get_or_create(
-            name="gene", cv=self.db_seq, dbxref=self.dbxref_gene,
-            is_obsolete=0, is_relationshiptype=0
+            name="gene",
+            cv=self.db_seq,
+            dbxref=self.dbxref_gene,
+            is_obsolete=0,
+            is_relationshiptype=0,
         )[0]
 
     def test_init_without_doi(self):
@@ -39,9 +58,11 @@ class SequenceLoaderTest(TestCase):
     def test_init_with_doi(self):
         db_doi = Db.objects.create(name="DOI")
         dbxref_doi = Dbxref.objects.create(db=db_doi, accession="10.1234/test")
-        pub = Pub.objects.create(uniquename="test_pub", type_id=self.cvterm_gene.cvterm_id)
+        pub = Pub.objects.create(
+            uniquename="test_pub", type_id=self.cvterm_gene.cvterm_id
+        )
         PubDbxref.objects.create(pub=pub, dbxref=dbxref_doi, is_current=True)
-        
+
         loader = SequenceLoader("test.fa", self.org, doi="10.1234/test")
         self.assertIsNotNone(loader.pub_dbxref_doi)
 
@@ -53,7 +74,7 @@ class SequenceLoaderTest(TestCase):
         loader = SequenceLoader("test.fa", self.org)
         seq_record = SeqRecord(Seq("ATGC"), id="feat1", description="Description 1")
         loader.store_biopython_seq_record(seq_record, "gene")
-        
+
         feature = Feature.objects.get(uniquename="feat1")
         self.assertEqual(feature.residues, "ATGC")
         self.assertEqual(feature.name, "Description 1")
@@ -63,20 +84,22 @@ class SequenceLoaderTest(TestCase):
         loader = SequenceLoader("test.fa", self.org)
         seq_record = SeqRecord(Seq("ATGC"), id="feat1")
         loader.store_biopython_seq_record(seq_record, "gene")
-        
+
         with self.assertRaisesRegex(ImportingError, "already registered"):
             loader.store_biopython_seq_record(seq_record, "gene")
 
     def test_store_biopython_seq_record_with_doi(self):
         db_doi = Db.objects.create(name="DOI")
         dbxref_doi = Dbxref.objects.create(db=db_doi, accession="10.1234/test")
-        pub = Pub.objects.create(uniquename="test_pub", type_id=self.cvterm_gene.cvterm_id)
+        pub = Pub.objects.create(
+            uniquename="test_pub", type_id=self.cvterm_gene.cvterm_id
+        )
         PubDbxref.objects.create(pub=pub, dbxref=dbxref_doi, is_current=True)
-        
+
         loader = SequenceLoader("test.fa", self.org, doi="10.1234/test")
         seq_record = SeqRecord(Seq("ATGC"), id="feat1")
         loader.store_biopython_seq_record(seq_record, "gene")
-        
+
         feature = Feature.objects.get(uniquename="feat1")
         self.assertTrue(FeaturePub.objects.filter(feature=feature, pub=pub).exists())
 
@@ -84,13 +107,18 @@ class SequenceLoaderTest(TestCase):
         loader = SequenceLoader("test.fa", self.org)
         # Create feature first without residues
         Feature.objects.create(
-            organism=self.org, uniquename="feat1", type=self.cvterm_gene,
-            is_analysis=False, is_obsolete=False, timeaccessioned="2023-01-01T00:00:00Z", timelastmodified="2023-01-01T00:00:00Z"
+            organism=self.org,
+            uniquename="feat1",
+            type=self.cvterm_gene,
+            is_analysis=False,
+            is_obsolete=False,
+            timeaccessioned="2023-01-01T00:00:00Z",
+            timelastmodified="2023-01-01T00:00:00Z",
         )
-        
+
         seq_record = SeqRecord(Seq("ATGC"), id="feat1")
         loader.add_sequence_to_feature(seq_record, "gene")
-        
+
         feature = Feature.objects.get(uniquename="feat1")
         self.assertEqual(feature.residues, "ATGC")
 

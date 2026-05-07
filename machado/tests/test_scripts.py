@@ -13,7 +13,7 @@ class StartProjectScriptTest(unittest.TestCase):
             test_args = ["machado-startproject", tmpdir, "--verbosity=0"]
             with patch.object(sys, "argv", test_args):
                 main()
-            
+
             target = Path(tmpdir)
             self.assertTrue((target / ".env.example").exists())
             self.assertTrue((target / ".env").exists())
@@ -24,17 +24,20 @@ class StartProjectScriptTest(unittest.TestCase):
             test_args = ["machado-startproject", tmpdir, "--verbosity=0"]
             with patch.object(sys, "argv", test_args):
                 main()
-            
+
             # Running again without --overwrite
             with patch.object(sys, "argv", test_args):
                 main()
-            
+
             # Running with --overwrite
             test_args_overwrite = [
-                "machado-startproject", tmpdir, "--overwrite", "--verbosity=0",
+                "machado-startproject",
+                tmpdir,
+                "--overwrite",
+                "--verbosity=0",
             ]
             with patch.object(sys, "argv", test_args_overwrite):
                 main()
-            
+
             target = Path(tmpdir)
             self.assertTrue((target / ".env").exists())

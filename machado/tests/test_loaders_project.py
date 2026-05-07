@@ -76,8 +76,10 @@ class ProjectTest(TestCase):
         from unittest.mock import patch
         from django.db.utils import IntegrityError
         from machado.loaders.exceptions import ImportingError
-        
-        with patch("machado.models.Project.objects.get_or_create", side_effect=IntegrityError):
+
+        with patch(
+            "machado.models.Project.objects.get_or_create", side_effect=IntegrityError
+        ):
             with self.assertRaises(ImportingError):
                 test_project_file1.store_project(name="error_acc", filename="error.txt")
 
@@ -98,7 +100,12 @@ class ProjectTest(TestCase):
         from unittest.mock import patch
         from django.db.utils import IntegrityError
         from machado.loaders.exceptions import ImportingError
-        
-        with patch("machado.models.Projectprop.objects.get_or_create", side_effect=IntegrityError):
+
+        with patch(
+            "machado.models.Projectprop.objects.get_or_create",
+            side_effect=IntegrityError,
+        ):
             with self.assertRaises(ImportingError):
-                test_project_file1.store_projectprop(project, test_cvterm.cvterm_id, "error.txt")
+                test_project_file1.store_projectprop(
+                    project, test_cvterm.cvterm_id, "error.txt"
+                )

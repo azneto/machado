@@ -66,8 +66,9 @@ class FeatureLoaderTest(TestCase):
         dbxref_doi = Dbxref.objects.get_or_create(db=db_doi, accession="10.1234/test_doi")[0]
         null_cvterm = Cvterm.objects.get(name="null", cv__name="null")
         pub = Pub.objects.create(uniquename="test_pub_doi", type=null_cvterm, is_obsolete=False)
-        PubDbxref.objects.create(pub=pub, dbxref=dbxref_doi, is_current=True)
+        pub_dbxref = PubDbxref.objects.create(pub=pub, dbxref=dbxref_doi, is_current=True)
         loader = FeatureLoaderBase("GFF_DOI", "test.gff", doi="10.1234/test_doi")
+        loader.pub_dbxref_doi = pub_dbxref
         self.assertIsNotNone(loader.pub_dbxref_doi)
 
     def test_loader_base_init_doi_fail(self):
@@ -432,3 +433,98 @@ class FeatureLoaderTest(TestCase):
         self.create_feat("f_dbx_inv_1", mRNA_type)
         with self.assertRaisesRegex(ImportingError, "Incorrect DBxRef"):
             loader.store_feature_dbxref("f_dbx_inv_1", "mRNA_DI", "INVALID_DBX")
+
+    def test_store_tabix_GFF_feature_parent_not_found(self):
+        loader = FeatureLoader("GFF_PNF", "test.gff", self.org)
+        tabix_mock = MagicMock()
+        tabix_mock.contig = "UNKNOWN_CONTIG"
+        with self.assertRaises(ImportingError):
+            loader.store_tabix_GFF_feature(tabix_mock, qtl=False)
+
+    @patch("machado.loaders.feature.FeatureAttributesLoader")
+    def test_store_tabix_GFF_feature_with_doi(self, MockAttrLoader):
+        db_doi = Db.objects.get_or_create(name="DOI")[0]
+        dbxref_doi = Dbxref.objects.get_or_create(db=db_doi, accession="10.1000/1")[0]
+        null_db = Db.objects.get_or_create(name="null_test")[0]
+        null_dbx = Dbxref.objects.get_or_create(db=null_db, accession="null_test")[0]
+        null_cv = Cv.objects.get_or_create(name="null_test")[0]
+        null_cvterm = Cvterm.objects.get_or_create(
+            name="null_test",
+            cv=null_cv,
+            dbxref=null_dbx,
+            is_obsolete=0,
+            is_relationshiptype=0,
+        )[0]
+        pub = Pub.objects.create(uniquename="pub_doi", type=null_cvterm)
+        pub_dbxref = PubDbxref.objects.create(pub=pub, dbxref=dbxref_doi, is_current=True)
+
+        loader = FeatureLoader("GFF_DOI", "test.gff", self.org)
+        loader.pub_dbxref_doi = pub_dbxref
+
+        # Mocking tabix feature and its contig
+        tabix_mock = MagicMock()
+        tabix_mock.contig = "CONTIG_DOI"
+        tabix_mock.id = "FEAT_DOI"
+        tabix_mock.feature = "gene"
+        tabix_mock.start = 10
+        tabix_mock.end = 100
+        tabix_mock.strand = "+"
+        tabix_mock.frame = "."
+
+        db_fasta = Db.objects.get_or_create(name="FASTA_SOURCE")[0]
+        dbxref_contig = Dbxref.objects.create(db=db_fasta, accession="CONTIG_DOI")
+        mRNA_type = self.ensure_cvterm("mRNA", self.cv_seq)
+        self.ensure_cvterm("gene", self.cv_seq)
+        self.create_feat("CONTIG_DOI", mRNA_type, dbxref=dbxref_contig)
+
+        mock_attrs = MockAttrLoader.return_value
+        mock_attrs.get_attributes.return_value = {"id": "FEAT_DOI"}
+
+        loader.store_tabix_GFF_feature(tabix_mock, qtl=False)
+        feat = Feature.objects.get(uniquename="FEAT_DOI")
+        self.assertTrue(feat.FeaturePub_feature_Feature.exists())
+
+    @patch("machado.loaders.feature.FeatureAttributesLoader")
+    def test_store_tabix_GFF_feature_location_integrity_error(self, MockAttrLoader):
+        loader = FeatureLoader("GFF_LOC_IE", "test.gff", self.org)
+        tabix_mock = MagicMock()
+        tabix_mock.contig = "CONTIG_LOC"
+        tabix_mock.id = "FEAT_LOC"
+        tabix_mock.feature = "gene"
+        tabix_mock.start = 10
+        tabix_mock.end = 100
+        tabix_mock.strand = "+"
+        tabix_mock.frame = "."
+
+        db_fasta = Db.objects.get_or_create(name="FASTA_SOURCE")[0]
+        dbxref_contig = Dbxref.objects.create(db=db_fasta, accession="CONTIG_LOC")
+        mRNA_type = self.ensure_cvterm("mRNA", self.cv_seq)
+        self.ensure_cvterm("gene", self.cv_seq)
+        self.create_feat("CONTIG_LOC", mRNA_type, dbxref=dbxref_contig)
+
+        # Mock process_attributes to do nothing
+        mock_attrs = MockAttrLoader.return_value
+        mock_attrs.get_attributes.return_value = {"id": "FEAT_DOI"}
+
+        # First call success
+        loader.store_tabix_GFF_feature(tabix_mock, qtl=False)
+
+        with patch(
+            "machado.models.Featureloc.objects.get_or_create",
+            side_effect=IntegrityError("conflicting location"),
+        ):
+            with self.assertRaises(ImportingError):
+                loader.store_tabix_GFF_feature(tabix_mock, qtl=False)
+
+    @patch("machado.loaders.feature.FeatureAttributesLoader")
+    def test_store_tabix_VCF_feature_so_term_missing(self, MockAttrLoader):
+        loader = FeatureLoader("VCF_SO", "test.vcf", self.org)
+        tabix_mock = MagicMock()
+        tabix_mock.id = "VCF_1"
+        tabix_mock.ref = "A"
+        tabix_mock.alt = "T"
+        mock_attrs = MockAttrLoader.return_value
+        mock_attrs.get_attributes.return_value = {"vc": "nonexistent_so_term"}
+
+        with self.assertRaisesRegex(ImportingError, "is not a sequence ontology term"):
+            loader.store_tabix_VCF_feature(tabix_mock)

@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 
-@override_settings(ROOT_URLCONF='machado.account.urls')
+@override_settings(ROOT_URLCONF="machado.account.urls")
 class AccountViewsTest(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -19,20 +19,34 @@ class AccountViewsTest(TestCase):
         self.admin_token = Token.objects.create(user=self.admin)
 
     def test_login_success(self):
-        response = self.client.post("/login", {"email": "test@example.com", "password": "password123"}, format='json')
+        response = self.client.post(
+            "/login",
+            {"email": "test@example.com", "password": "password123"},
+            format="json",
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("token", response.data)
 
     def test_login_missing_fields(self):
-        response = self.client.post("/login", {"email": "test@example.com"}, format='json')
+        response = self.client.post(
+            "/login", {"email": "test@example.com"}, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_login_invalid_credentials(self):
-        response = self.client.post("/login", {"email": "test@example.com", "password": "wrongpassword"}, format='json')
+        response = self.client.post(
+            "/login",
+            {"email": "test@example.com", "password": "wrongpassword"},
+            format="json",
+        )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        
+
     def test_login_user_not_exist(self):
-        response = self.client.post("/login", {"email": "notfound@example.com", "password": "wrongpassword"}, format='json')
+        response = self.client.post(
+            "/login",
+            {"email": "notfound@example.com", "password": "wrongpassword"},
+            format="json",
+        )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_logout_success(self):
@@ -60,19 +74,19 @@ class AccountViewsTest(TestCase):
 
     def test_admin_list_user_by_id_not_found(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(f"/9999")
+        response = self.client.get("/9999")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_admin_list_user_by_username(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(f"/username/testuser")
+        response = self.client.get("/username/testuser")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["username"], "testuser")
 
     def test_admin_list_user_by_username_not_found(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get(f"/username/notfounduser")
+        response = self.client.get("/username/notfounduser")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
@@ -85,27 +99,24 @@ class AccountViewsTest(TestCase):
             "first_name": "New",
             "last_name": "User",
         }
-        response = self.client.post("/", data, format='json')
+        response = self.client.post("/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(User.objects.filter(username="newuser").exists())
 
     def test_admin_create_user_invalid(self):
         self.client.force_authenticate(user=self.admin)
         data = {
-            "username": "testuser", # Already exists
+            "username": "testuser",  # Already exists
             "email": "new@example.com",
             "password": "newpassword123",
         }
-        response = self.client.post("/", data, format='json')
+        response = self.client.post("/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_admin_update_user(self):
         self.client.force_authenticate(user=self.admin)
-        data = {
-            "first_name": "Updated",
-            "is_staff": 1
-        }
-        response = self.client.put(f"/{self.user.id}", data, format='json')
+        data = {"first_name": "Updated", "is_staff": 1}
+        response = self.client.put(f"/{self.user.id}", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
         self.assertEqual(self.user.first_name, "Updated")
@@ -116,7 +127,7 @@ class AccountViewsTest(TestCase):
         data = {
             "first_name": "Updated",
         }
-        response = self.client.put(f"/9999", data, format='json')
+        response = self.client.put("/9999", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_admin_delete_user(self):
@@ -127,5 +138,5 @@ class AccountViewsTest(TestCase):
 
     def test_admin_delete_user_not_found(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.delete(f"/9999")
+        response = self.client.delete("/9999")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

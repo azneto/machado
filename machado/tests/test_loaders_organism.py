@@ -7,10 +7,19 @@
 """Tests for organism loader."""
 
 from django.test import TestCase
-from django.core.exceptions import ObjectDoesNotExist
 from machado.loaders.organism import OrganismLoader
 from machado.loaders.exceptions import ImportingError
-from machado.models import Organism, Db, Dbxref, Cv, Cvterm, Pub, PubDbxref, OrganismPub, OrganismDbxref, Organismprop
+from machado.models import (
+    Organism,
+    Db,
+    Dbxref,
+    Pub,
+    PubDbxref,
+    OrganismPub,
+    OrganismDbxref,
+    Organismprop,
+)
+
 
 class OrganismLoaderTest(TestCase):
     def setUp(self):
@@ -18,24 +27,23 @@ class OrganismLoaderTest(TestCase):
         self.loader = OrganismLoader()
 
     def test_init_with_db(self):
-        loader = OrganismLoader(organism_db="TAXONOMY")
+        OrganismLoader(organism_db="TAXONOMY")
         self.assertTrue(Db.objects.filter(name="TAXONOMY").exists())
 
     def test_parse_scientific_name(self):
         # Case 1: Genus species
         self.assertEqual(
             self.loader.parse_scientific_name("Genus species"),
-            ("Genus", "species", None)
+            ("Genus", "species", None),
         )
         # Case 2: Genus species infra
         self.assertEqual(
             self.loader.parse_scientific_name("Genus species infra"),
-            ("Genus", "species", "Genus species infra")
+            ("Genus", "species", "Genus species infra"),
         )
         # Case 3: Only genus
         self.assertEqual(
-            self.loader.parse_scientific_name("Genus"),
-            ("Genus", ".spp", None)
+            self.loader.parse_scientific_name("Genus"), ("Genus", ".spp", None)
         )
 
     def test_store_organism_record(self):
@@ -44,31 +52,41 @@ class OrganismLoaderTest(TestCase):
             taxid="1234",
             scname="Genus species",
             synonyms=["Syn1"],
-            common_names=["Common1", "Common2"]
+            common_names=["Common1", "Common2"],
         )
-        
+
         org = Organism.objects.get(genus="Genus", species="species")
         self.assertEqual(org.common_name, "Common1,Common2")
         self.assertEqual(org.abbreviation, "G. species")
-        
+
         # Check Dbxref
-        self.assertTrue(OrganismDbxref.objects.filter(organism=org, dbxref__accession="1234").exists())
-        
+        self.assertTrue(
+            OrganismDbxref.objects.filter(
+                organism=org, dbxref__accession="1234"
+            ).exists()
+        )
+
         # Check Synonym
-        self.assertTrue(Organismprop.objects.filter(organism=org, value="Syn1").exists())
+        self.assertTrue(
+            Organismprop.objects.filter(organism=org, value="Syn1").exists()
+        )
 
     def test_store_organism_publication(self):
         org = Organism.objects.create(genus="Genus", species="species")
         db_doi = Db.objects.create(name="DOI")
         dbxref_doi = Dbxref.objects.create(db=db_doi, accession="10.1234/test")
-        pub = Pub.objects.create(uniquename="test_pub", type_id=self.loader.cvterm_synonym.cvterm_id) # Using any cvterm for pub type
+        pub = Pub.objects.create(
+            uniquename="test_pub", type_id=self.loader.cvterm_synonym.cvterm_id
+        )  # Using any cvterm for pub type
         PubDbxref.objects.create(pub=pub, dbxref=dbxref_doi, is_current=True)
-        
+
         self.loader.store_organism_publication("Genus species", "10.1234/test")
-        
+
         self.assertTrue(OrganismPub.objects.filter(organism=org, pub=pub).exists())
 
     def test_store_organism_publication_not_found(self):
         Organism.objects.create(genus="Genus", species="species")
         with self.assertRaisesRegex(ImportingError, "not registered"):
-            self.loader.store_organism_publication("Genus species", "10.1234/nonexistent")
+            self.loader.store_organism_publication(
+                "Genus species", "10.1234/nonexistent"
+            )

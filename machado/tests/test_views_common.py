@@ -257,7 +257,9 @@ class DataSummaryTest(TestCase):
             is_relationshiptype=0,
         )
 
-        org = Organism.objects.create(genus="Zea", species="mays", infraspecific_name="subsp. mays")
+        org = Organism.objects.create(
+            genus="Zea", species="mays", infraspecific_name="subsp. mays"
+        )
         Feature.objects.create(
             organism=org,
             uniquename="feat_zea",
@@ -269,6 +271,7 @@ class DataSummaryTest(TestCase):
         )
 
         from django.conf import settings
+
         original_valid_types = getattr(settings, "MACHADO_VALID_TYPES", None)
         if hasattr(settings, "MACHADO_VALID_TYPES"):
             delattr(settings, "MACHADO_VALID_TYPES")
@@ -286,6 +289,7 @@ class DataSummaryTest(TestCase):
             settings.MACHADO_VALID_TYPES = original_valid_types
 
         self.assertEqual(response.status_code, 200)
+
 
 class CongratsTest(TestCase):
     """Tests Congrats View."""
