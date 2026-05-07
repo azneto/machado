@@ -1,0 +1,88 @@
+# Web Server
+
+## Django manage runserver
+
+Check if your server is working — test the machado server:
+
+```bash
+python manage.py runserver
+```
+
+Now, open your browser and go to <http://127.0.0.1:8000>.
+
+Use `CTRL+C` to stop the web server.
+
+## Django Apache WSGI
+
+Before starting, make sure you have Apache installed in your system. In Ubuntu 20.04:
+
+```bash
+sudo apt install apache2
+```
+
+In order to have Apache2 hosting the Django applications, it's necessary to use WSGI. By doing this it won't be necessary to run the runserver command anymore — Apache will take care of this process. Install the following package:
+
+```bash
+sudo apt install libapache2-mod-wsgi-py3
+```
+
+Now configure Apache to use the WSGI module. Here is the configuration file (`/etc/apache2/sites-available/YOURPROJECT.conf`):
+
+```apacheconf
+<Directory "/var/www/YOURPROJECT/WEBPROJECT">
+    <Files "wsgi.py">
+        Require all granted
+    </Files>
+</Directory>
+
+Alias /YOURPROJECT/static/ /var/www/YOURPROJECT/WEBPROJECT/static/
+
+<Directory "/var/www/YOURPROJECT/WEBPROJECT/static">
+    Require all granted
+</Directory>
+
+WSGIDaemonProcess WEBPROJECT lang='en_US.UTF-8' locale='en_US.UTF-8'
+WSGIPythonHome /var/www/YOURPROJECT
+WSGIPythonPath /var/www/YOURPROJECT
+WSGIScriptAlias /YOURPROJECT /var/www/YOURPROJECT/WEBPROJECT/wsgi.py
+```
+
+- In this example the whole project is in `/var/www/YOURPROJECT`, but it's not required to be there.
+- This directory and sub-directories must have 755 permissions.
+
+There must be a symlink of your config file in the sites-enabled directory:
+
+```bash
+sudo ln -s /etc/apache2/sites-available/YOURPROJECT.conf /etc/apache2/sites-enabled/YOURPROJECT.conf
+```
+
+In the `WEBPROJECT/settings.py` file, set the following variables:
+
+```python
+ALLOWED_HOSTS = ['*']
+MACHADO_URL = 'http://localhost/YOURPROJECT'
+
+MACHADO_EXAMPLE_TXT = "kinase"
+MACHADO_EXAMPLE_AA_ACC = "AT1G01030.1"
+MACHADO_EXAMPLE_AA = 1869098
+MACHADO_EXAMPLE_NA = 1869093
+
+MACHADO_VALID_TYPES = ['gene', 'mRNA', 'polypeptide']
+
+STATIC_URL = '/YOURPROJECT/static/'
+STATIC_ROOT = '/var/www/YOURPROJECT/WEBPROJECT/static'
+```
+
+Now, run `collectstatic` to gather the static files from all libraries to `STATIC_ROOT`:
+
+```bash
+python manage.py collectstatic
+```
+
+It's necessary to restart the Apache2 service every time there are modifications on configuration files or source code updates:
+
+```bash
+sudo systemctl restart apache2.service
+```
+
+Now, open your browser and go to <http://localhost/YOURPROJECT>.

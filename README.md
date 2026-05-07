@@ -5,7 +5,7 @@
 
 Machado is a Django application that contains tools to interact with a Chado database.
 It provides users with a framework to store, search and visualize biological data.
-Detailed documentation can be found in the **docs** directory ([Read the docs](http://machado.readthedocs.io)).
+Detailed documentation can be found in the [docs](docs/index.md) directory or in the [PDF manual](docs/machado-manual.pdf).
 
 
 ## Features
@@ -14,7 +14,7 @@ Detailed documentation can be found in the **docs** directory ([Read the docs](h
 - The Haystack framework provides a very fast query interface using the Elasticsearch engine
 
 ## Installation
-Please refer to the complete documentation at [Read the docs](http://machado.readthedocs.io/en/latest/installation.html).
+Please refer to the [installation guide](docs/01-installation.md).
 
 ## Docker
 
