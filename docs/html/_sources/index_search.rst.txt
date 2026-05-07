@@ -5,79 +5,80 @@ Index and search
 
 The `Haystack <https://haystacksearch.org>`_ software enables the Django framework to run third party search engines such as Elasticsearch and Solr. Even though you can use any search engine supported by Haystack, machado was tested using `Elasticsearch <https://www.elastic.co/products/elasticsearch>`_.
 
-**Elasticsearch**
+Install Elasticsearch
+---------------------
 
-The latest Elasticsearch supported by Haystack is version 5.x.x
-Install Elasticsearch following the `instructions <https://django-haystack.readthedocs.io/en/v2.4.1/installing_search_engines.html#elasticsearch>`_. "Elasticsearch requires Java 8 or later. Use the official Oracle distribution or an open-source distribution such as OpenJDK." So before continuing you should probably want to have java installed using the following command (ubuntu 20.04):
-
-.. code-block:: bash
-
-    sudo apt install openjdk-8-jdk
-
-Now, proceding with elasticsearch instalation, run the following commands:
+Elasticsearch 7.x is required. Install Java first:
 
 .. code-block:: bash
 
-    cd YOURPROJECT
-    source bin/activate
-    cd src
+    sudo apt install openjdk-11-jdk
+
+Then install Elasticsearch:
+
+.. code-block:: bash
+
     wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.17.26-amd64.deb
     sudo dpkg -i elasticsearch-7.17.26-amd64.deb
     sudo systemctl daemon-reload
     sudo systemctl enable elasticsearch.service
     sudo systemctl start elasticsearch.service
 
-**Django Haystack**
-
-Install django-haystack following the `official instructions <http://docs.haystacksearch.org/en/master/tutorial.html#installation>`_.
-
+Install the Python client inside your virtualenv:
 
 .. code-block:: bash
 
     pip install 'elasticsearch>=7,<8'
 
-In the WEBPROJECT/settings.py file, add haystack to INSTALLED_APPS section.
+Enable search in machado
+------------------------
 
-.. code-block:: python
-
-    INSTALLED_APPS = [
-        ...
-        'haystack',
-        ...
-    ]
-
-The settings.py file should contain the `search engine configuration <http://docs.haystacksearch.org/en/master/tutorial.html#xapian>`_.
+Uncomment the Elasticsearch settings in your ``.env`` file:
 
 .. code-block:: bash
 
-    HAYSTACK_CONNECTIONS = {
-        'default': {
-            'ENGINE': 'haystack.backends.elasticsearch7_backend.Elasticsearch7SearchEngine',
-            'URL': 'http://127.0.0.1:9200/',
-            'INDEX_NAME': 'haystack',
-        },
-    }
+    ELASTICSEARCH_URL=http://127.0.0.1:9200/
+    HAYSTACK_INDEX_NAME=haystack
 
-* In the settings.py file, set the variable MACHADO_VALID_TYPES to restrict the types of features that will be indexed. Otherwise, every feature will be indexed.
+When ``ELASTICSEARCH_URL`` is set, machado automatically adds ``haystack`` to
+``INSTALLED_APPS`` and configures ``HAYSTACK_CONNECTIONS`` — no manual editing
+of ``settings.py`` is needed.
+
+You can also configure which feature types are indexed:
 
 .. code-block:: bash
 
-    MACHADO_VALID_TYPES = ['gene', 'mRNA', 'polypeptide']
+    MACHADO_VALID_TYPES=gene,mRNA,polypeptide
 
+If ``MACHADO_VALID_TYPES`` is not set, the default is ``gene,mRNA,polypeptide``.
 
-**Indexing the data**
+Indexing the data
+-----------------
 
-Go to the WEBPROJECT directory and use the manage.py. Please notice that it's necessary to run rebuild_index if additional data is loaded to the database or if changes are made to the settings files.
+After loading data into the database, build the search index:
 
 .. code-block:: bash
 
     python manage.py rebuild_index
 
-* Rebuilding the index can be faster if you increase the number of workers (-k).
+.. note::
 
+    It is necessary to run ``rebuild_index`` whenever additional data is
+    loaded into the database or when search-related settings change.
 
-The Elasticsearch server has a 10,000 results limit by default. In most cases it will not affect the results since they are paginated. The links to export .tsv or .fasta files might truncated the results because of this limit. You can increase it using the following command line:
+Rebuilding the index can be faster if you increase the number of workers:
 
 .. code-block:: bash
 
-   curl -XPUT "http://localhost:9200/haystack/_settings" -d '{ "index" : { "max_result_window" : 500000 } }' -H "Content-Type: application/json"
+    python manage.py rebuild_index -k 4
+
+Increasing the results limit
+-----------------------------
+
+The Elasticsearch server has a 10,000 results limit by default. In most cases it will not affect the results since they are paginated. The links to export .tsv or .fasta files might be truncated because of this limit. You can increase it with:
+
+.. code-block:: bash
+
+    curl -XPUT "http://localhost:9200/haystack/_settings" \
+         -d '{ "index" : { "max_result_window" : 500000 } }' \
+         -H "Content-Type: application/json"

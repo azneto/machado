@@ -25,7 +25,6 @@ jobs:
           POSTGRES_DB: yourdatabase
         ports:
           - 5432:5432
-        # needed because the postgres container does not provide a healthcheck
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
@@ -42,9 +41,12 @@ jobs:
       run: |
         pip install flake8 flake8-black flake8-pyproject
         flake8 machado
-    - name: Create project
+    - name: Verify machado-startproject
       run: |
-        django-admin startproject WEBPROJECT
+        mkdir -p /tmp/testproject
+        machado-startproject /tmp/testproject
+        sed -i 's|DATABASE_URL=.*|DATABASE_URL=postgres://username:password@localhost:5432/yourdatabase|' /tmp/testproject/.env
+        python /tmp/testproject/manage.py check
     - name: Run Tests
       run: |
-        python WEBPROJECT/manage.py test machado --settings machado.tests.settings
+        python -m django test machado --settings machado.tests.settings
