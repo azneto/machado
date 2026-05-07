@@ -4,177 +4,105 @@
 # license. Please see the LICENSE.txt and README.md files that should
 # have been included as part of this package for licensing information.
 
-"""Tests loader sequence."""
+"""Tests for sequence loader."""
 
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-from bibtexparser.bibdatabase import BibDatabase
-
-# from django.core.management import call_command
 from django.test import TestCase
-
-from machado.loaders.exceptions import ImportingError
-from machado.loaders.publication import PublicationLoader
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 from machado.loaders.sequence import SequenceLoader
-from machado.models import Cv, Cvterm, Db, Dbxref, Organism
-from machado.models import Feature, FeaturePub
-from machado.models import Pub, PubDbxref
+from machado.loaders.exceptions import ImportingError
+from machado.models import Organism, Db, Dbxref, Cv, Cvterm, Pub, PubDbxref, Feature, FeaturePub
 
-
-class SequenceTest(TestCase):
-    """Tests Loaders - SequenceLoader."""
-
+class SequenceLoaderTest(TestCase):
     def setUp(self):
-        """Set up."""
-        test_db = Db.objects.create(name="SO")
-        test_dbxref = Dbxref.objects.create(accession="00001", db=test_db)
-        test_cv = Cv.objects.create(name="sequence")
-        Cvterm.objects.create(
-            name="assembly",
-            cv=test_cv,
-            dbxref=test_dbxref,
-            is_obsolete=0,
-            is_relationshiptype=0,
-        )
-        test_db = Db.objects.create(name="RO")
-        test_dbxref = Dbxref.objects.create(accession="00002", db=test_db)
-        test_cv = Cv.objects.create(name="relationship")
-        Cvterm.objects.create(
-            name="located in",
-            cv=test_cv,
-            dbxref=test_dbxref,
-            is_obsolete=0,
-            is_relationshiptype=0,
-        )
-        Organism.objects.create(genus="Mus", species="musculus")
-        Organism.objects.create(genus="Homo", species="sapiens")
+        self.org = Organism.objects.create(genus="Genus", species="species")
+        self.db_rel = Cv.objects.create(name="relationship")
+        self.db_seq = Cv.objects.create(name="sequence")
+        self.db_internal = Db.objects.create(name="internal")
+        self.dbxref_loc = Dbxref.objects.create(db=self.db_internal, accession="located_in")
+        self.cvterm_loc = Cvterm.objects.get_or_create(
+            name="located in", cv=self.db_rel, dbxref=self.dbxref_loc,
+            is_obsolete=0, is_relationshiptype=1
+        )[0]
+        
+        self.dbxref_gene = Dbxref.objects.create(db=self.db_internal, accession="gene")
+        self.cvterm_gene = Cvterm.objects.get_or_create(
+            name="gene", cv=self.db_seq, dbxref=self.dbxref_gene,
+            is_obsolete=0, is_relationshiptype=0
+        )[0]
 
-    def test_fail_biopython_seq_record(self):
-        """Tests fail __init__ and store_biopython_seq_record."""
-        # sequence already registered
-        organism = Organism.objects.get(genus="Mus", species="musculus")
+    def test_init_without_doi(self):
+        loader = SequenceLoader("test.fa", self.org)
+        self.assertEqual(loader.filename, "test.fa")
+        self.assertTrue(Db.objects.filter(name="FASTA_SOURCE").exists())
+
+    def test_init_with_doi(self):
+        db_doi = Db.objects.create(name="DOI")
+        dbxref_doi = Dbxref.objects.create(db=db_doi, accession="10.1234/test")
+        pub = Pub.objects.create(uniquename="test_pub", type_id=self.cvterm_gene.cvterm_id)
+        PubDbxref.objects.create(pub=pub, dbxref=dbxref_doi, is_current=True)
+        
+        loader = SequenceLoader("test.fa", self.org, doi="10.1234/test")
+        self.assertIsNotNone(loader.pub_dbxref_doi)
+
+    def test_init_with_doi_fail_dbxref(self):
         with self.assertRaises(ImportingError):
-            test_seq_file = SequenceLoader(filename="sequence.fasta", organism=organism)
-            test_seq_obj = SeqRecord(
-                Seq("acgtgtgtgcatgctagatcgatgcatgca"),
-                id="chr1",
-                description="chromosome 1",
-            )
-            test_seq_file.store_biopython_seq_record(test_seq_obj, "assembly")
-            test_seq_obj = SeqRecord(
-                Seq("acgtgtgtgcatgctagatcgatgcatgca"),
-                id="chr1",
-                description="chromosome 1",
-            )
-            test_seq_file.store_biopython_seq_record(test_seq_obj, "assembly")
+            SequenceLoader("test.fa", self.org, doi="10.1234/nonexistent")
 
-    def test_store_biopython_seq_record(self):
-        """Tests - __init__ and store_biopython_seq_record."""
-        # test insert sequence
-        organism = Organism.objects.get(genus="Mus", species="musculus")
-        test_seq_file = SequenceLoader(filename="sequence.fasta", organism=organism)
-        test_seq_obj = SeqRecord(
-            Seq("acgtgtgtgcatgctagatcgatgcatgca"), id="chr1", description="chromosome 1"
+    def test_store_biopython_seq_record_success(self):
+        loader = SequenceLoader("test.fa", self.org)
+        seq_record = SeqRecord(Seq("ATGC"), id="feat1", description="Description 1")
+        loader.store_biopython_seq_record(seq_record, "gene")
+        
+        feature = Feature.objects.get(uniquename="feat1")
+        self.assertEqual(feature.residues, "ATGC")
+        self.assertEqual(feature.name, "Description 1")
+        self.assertEqual(feature.seqlen, 4)
+
+    def test_store_biopython_seq_record_already_exists(self):
+        loader = SequenceLoader("test.fa", self.org)
+        seq_record = SeqRecord(Seq("ATGC"), id="feat1")
+        loader.store_biopython_seq_record(seq_record, "gene")
+        
+        with self.assertRaisesRegex(ImportingError, "already registered"):
+            loader.store_biopython_seq_record(seq_record, "gene")
+
+    def test_store_biopython_seq_record_with_doi(self):
+        db_doi = Db.objects.create(name="DOI")
+        dbxref_doi = Dbxref.objects.create(db=db_doi, accession="10.1234/test")
+        pub = Pub.objects.create(uniquename="test_pub", type_id=self.cvterm_gene.cvterm_id)
+        PubDbxref.objects.create(pub=pub, dbxref=dbxref_doi, is_current=True)
+        
+        loader = SequenceLoader("test.fa", self.org, doi="10.1234/test")
+        seq_record = SeqRecord(Seq("ATGC"), id="feat1")
+        loader.store_biopython_seq_record(seq_record, "gene")
+        
+        feature = Feature.objects.get(uniquename="feat1")
+        self.assertTrue(FeaturePub.objects.filter(feature=feature, pub=pub).exists())
+
+    def test_add_sequence_to_feature_success(self):
+        loader = SequenceLoader("test.fa", self.org)
+        # Create feature first without residues
+        Feature.objects.create(
+            organism=self.org, uniquename="feat1", type=self.cvterm_gene,
+            is_analysis=False, is_obsolete=False, timeaccessioned="2023-01-01T00:00:00Z", timelastmodified="2023-01-01T00:00:00Z"
         )
-        test_seq_file.store_biopython_seq_record(test_seq_obj, "assembly")
+        
+        seq_record = SeqRecord(Seq("ATGC"), id="feat1")
+        loader.add_sequence_to_feature(seq_record, "gene")
+        
+        feature = Feature.objects.get(uniquename="feat1")
+        self.assertEqual(feature.residues, "ATGC")
 
-        test_feature = Feature.objects.get(uniquename="chr1", organism=organism)
-        self.assertEqual("chr1", test_feature.uniquename)
-        self.assertEqual("chromosome 1", test_feature.name)
-        self.assertEqual("acgtgtgtgcatgctagatcgatgcatgca", test_feature.residues)
+    def test_add_sequence_to_feature_fail(self):
+        loader = SequenceLoader("test.fa", self.org)
+        seq_record = SeqRecord(Seq("ATGC"), id="nonexistent")
+        with self.assertRaisesRegex(ImportingError, "does NOT exist"):
+            loader.add_sequence_to_feature(seq_record, "gene")
 
-        # test insert no sequence
-        test_seq_obj = SeqRecord(Seq("acgtgtgtgcatgctagatcgatgcatgca"), id="chr2")
-        test_seq_file.store_biopython_seq_record(
-            test_seq_obj, "assembly", ignore_residues=True
-        )
-        test_feature = Feature.objects.get(uniquename="chr2", organism=organism)
-        self.assertEqual("chr2", test_feature.uniquename)
-        self.assertEqual("", test_feature.residues)
-
-        # test fail insert same id, same organism
-        # dbxref.accession must be unique
-        organism = Organism.objects.get(genus="Mus", species="musculus")
-        test_seq_file = SequenceLoader(filename="sequence2.fasta", organism=organism)
-        test_seq_obj = SeqRecord(
-            Seq("atgctagctagcatgactgactggtgcagtgcatgca"),
-            id="chr1",
-            description="chromosome 1",
-        )
-        with self.assertRaises(ImportingError):
-            test_seq_file.store_biopython_seq_record(test_seq_obj, "assembly")
-
-    def test_store_biopython_seq_record_DOI(self):
-        """Tests - __init__ and store_biopython_seq_record with DOI."""
-        # DOI TESTING
-        db2 = BibDatabase()
-        db2.entries = [
-            {
-                "journal": "Nice Journal",
-                "comments": "A comment",
-                "pages": "12--23",
-                "month": "jan",
-                "abstract": "This is an abstract. This line should be "
-                "long enough to test multilines...",
-                "title": "An amazing title",
-                "year": "2013",
-                "doi": "10.1186/s12864-016-2535-300002",
-                "volume": "12",
-                "ID": "Teste2018",
-                "author": "Foo, b. and Foo1, b. and Foo b.",
-                "keyword": "keyword1, keyword2",
-                "ENTRYTYPE": "article",
-            }
-        ]
-        for entry in db2.entries:
-            bibtest3 = PublicationLoader()
-            bibtest3.store_bibtex_entry(entry)
-        test_bibtex3 = Pub.objects.get(uniquename="Teste2018")
-        test_bibtex3_pubdbxref = PubDbxref.objects.get(pub=test_bibtex3)
-        test_bibtex3_dbxref = Dbxref.objects.get(
-            dbxref_id=test_bibtex3_pubdbxref.dbxref_id
-        )
-        self.assertEqual(
-            "10.1186/s12864-016-2535-300002", test_bibtex3_dbxref.accession
-        )
-
-        organism = Organism.objects.get(genus="Mus", species="musculus")
-        test_seq_file_pub = SequenceLoader(
-            filename="sequence_doi.fasta",
-            organism=organism,
-            doi="10.1186/s12864-016-2535-300002",
-        )
-        test_seq_obj_pub = SeqRecord(
-            Seq("acgtgtgtgcatgctagatcgatgcatgca"), id="chr2", description="chromosome 2"
-        )
-        test_seq_file_pub.store_biopython_seq_record(test_seq_obj_pub, "assembly")
-
-        test_feature_doi = Feature.objects.get(name="chromosome 2", organism=organism)
-
-        self.assertEqual("chr2", test_feature_doi.uniquename)
-        test_feature_pub_doi = FeaturePub.objects.get(pub_id=test_bibtex3.pub_id)
-        test_pub_dbxref_doi = PubDbxref.objects.get(pub_id=test_feature_pub_doi.pub_id)
-        test_dbxref_doi = Dbxref.objects.get(dbxref_id=test_pub_dbxref_doi.dbxref_id)
-        self.assertEqual("10.1186/s12864-016-2535-300002", test_dbxref_doi.accession)
-        # test remove_file
-        # self.assertTrue(Dbxrefprop.objects.filter(value="sequence_doi.fasta").exists())
-        # call_command("remove_file", "--name=sequence_doi.fasta", "--verbosity=0")
-        # self.assertFalse(Dbxrefprop.objects.filter(value="sequence_doi.fasta").exists())
-
-    def test_add_sequence_to_feature(self):
-        """Tests - add_sequence_to_feature."""
-        # test insert sequence
-        organism = Organism.objects.get(genus="Mus", species="musculus")
-        test_seq_file = SequenceLoader(filename="sequence.fasta", organism=organism)
-        test_seq_obj = SeqRecord(
-            Seq("acgtgtgtgcatgctagatcgatgcatgca"), id="chr1", description="chromosome 1"
-        )
-        test_seq_file.store_biopython_seq_record(test_seq_obj, "assembly")
-
-        # test add_sequence_to_feature
-        test_seq_obj = SeqRecord(
-            Seq("aaaaaaaaaaaaaaaaaaaa"), id="chr1", description="chromosome 1"
-        )
-        test_seq_file.add_sequence_to_feature(test_seq_obj, "assembly")
-        test_feature_seq = Feature.objects.get(uniquename="chr1", organism=organism)
-        self.assertEqual("aaaaaaaaaaaaaaaaaaaa", test_feature_seq.residues)
+    def test_store_biopython_seq_record_ignore_residues(self):
+        loader = SequenceLoader("test.fa", self.org)
+        seq_record = SeqRecord(Seq("ATGC"), id="feat2")
+        loader.store_biopython_seq_record(seq_record, "gene", ignore_residues=True)
+        feature = Feature.objects.get(uniquename="feat2")
+        self.assertEqual(feature.residues, "")

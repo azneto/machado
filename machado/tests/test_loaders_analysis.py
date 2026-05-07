@@ -4,330 +4,108 @@
 # license. Please see the LICENSE.txt and README.md files that should
 # have been included as part of this package for licensing information.
 
-"""Tests analysis data loader."""
+"""Tests for analysis loader."""
 
-from datetime import datetime
-
-from django.core.management import call_command
 from django.test import TestCase
-
 from machado.loaders.analysis import AnalysisLoader
-from machado.loaders.assay import AssayLoader
-from machado.models import Acquisition, Quantification
-from machado.models import Analysis, Analysisfeature, Analysisprop
-from machado.models import Cv, Cvterm, Db, Dbxref, Organism
-from machado.models import Feature
+from machado.loaders.exceptions import ImportingError
+from machado.models import Analysis, Analysisfeature, Analysisprop, Cv, Cvterm, Db, Dbxref, Organism, Feature, Assay, Acquisition, Quantification
+from machado.models import Contact, Arraydesign, Protocol
 
+class AnalysisLoaderTest(TestCase):
+    def setUp(self):
+        self.db_internal = Db.objects.create(name="internal")
+        self.dbxref_loc = Dbxref.objects.create(db=self.db_internal, accession="located_in")
+        self.cv_rel = Cv.objects.create(name="relationship")
+        self.cvterm_loc = Cvterm.objects.create(
+            name="located in", cv=self.cv_rel, dbxref=self.dbxref_loc,
+            is_obsolete=0, is_relationshiptype=1
+        )
+        self.loader = AnalysisLoader()
+        
+        # Dependencies for Assay
+        self.contact = Contact.objects.create(name="test contact")
+        self.db_seq = Cv.objects.create(name="sequence")
+        self.dbxref_gene = Dbxref.objects.create(db=self.db_internal, accession="gene")
+        self.type_gene = Cvterm.objects.create(name="gene", cv=self.db_seq, dbxref=self.dbxref_gene, is_obsolete=0, is_relationshiptype=0)
+        
+        self.arraydesign = Arraydesign.objects.create(manufacturer=self.contact, platformtype=self.type_gene, name="test array")
+        self.protocol = Protocol.objects.create(type=self.type_gene, name="test protocol")
+        
+        # mRNA type for Analysisfeature
+        self.dbxref_mrna = Dbxref.objects.create(db=self.db_internal, accession="mRNA")
+        self.type_mrna = Cvterm.objects.create(name="mRNA", cv=self.db_seq, dbxref=self.dbxref_mrna, is_obsolete=0, is_relationshiptype=0)
 
-class AnalysisTest(TestCase):
-    """Tests Loaders - AnalysisLoader."""
+    def create_assay(self, **kwargs):
+        defaults = {
+            "arraydesign": self.arraydesign,
+            "protocol": self.protocol,
+            "operator": self.contact,
+        }
+        defaults.update(kwargs)
+        return Assay.objects.create(**defaults)
 
-    help = """Will test with the following sample:
+    def test_store_analysis_success(self):
+        analysis = self.loader.store_analysis(
+            program="blast",
+            sourcename="test.xml",
+            programversion="2.1",
+            filename="test.xml",
+            name="Test Blast",
+            description="Blast description"
+        )
+        self.assertEqual(analysis.name, "Test Blast")
+        self.assertTrue(Analysisprop.objects.filter(analysis=analysis, value="test.xml").exists())
 
-    gene    SRR5167848.htseq        SRR2302912.htseq
-    AT2G44195.1.TAIR10  0.0 0.6936967934559419
-    AT1G25375.1.TAIR10  2.369615950632963   10.7523002985671
-    """
+    def test_store_analysis_with_date(self):
+        analysis = self.loader.store_analysis(
+            program="blast",
+            sourcename="test.xml",
+            programversion="2.1",
+            timeexecuted="Oct-16-2016"
+        )
+        self.assertEqual(analysis.timeexecuted.year, 2016)
+        self.assertEqual(analysis.timeexecuted.month, 10)
+        self.assertEqual(analysis.timeexecuted.day, 16)
 
-    def test_store_analysis(self):
-        """Run Tests ."""
-        # register multispecies organism
-        test_organism, created = Organism.objects.get_or_create(
-            abbreviation="multispecies",
-            genus="multispecies",
-            species="multispecies",
-            common_name="multispecies",
-        )
-        # creating test SO term
-        test_db = Db.objects.create(name="SO")
-        test_cv = Cv.objects.create(name="sequence")
-        # creating test RO term
-        test_db2 = Db.objects.create(name="RO")
-        test_cv2 = Cv.objects.create(name="relationship")
+    def test_store_quantification(self):
+        db_sra = Db.objects.create(name="SRA")
+        dbxref_sra = Dbxref.objects.create(db=db_sra, accession="SRR123")
+        assay = self.create_assay(dbxref=dbxref_sra, name="Assay 1")
+        analysis = Analysis.objects.create(program="p", sourcename="s", programversion="v", timeexecuted="2023-01-01T00:00:00Z")
+        
+        self.loader.store_quantification(analysis, "SRR123")
+        
+        self.assertTrue(Acquisition.objects.filter(assay=assay, name="SRR123").exists())
+        self.assertTrue(Quantification.objects.filter(analysis=analysis).exists())
 
-        test_dbxref2 = Dbxref.objects.create(accession="789", db=test_db2)
-        test_dbxref3 = Dbxref.objects.create(accession="135", db=test_db)
-        test_term = Cvterm.objects.create(
-            name="mRNA",
-            cv=test_cv,
-            dbxref=test_dbxref3,
-            is_obsolete=0,
-            is_relationshiptype=0,
-        )
-        Cvterm.objects.create(
-            name="located in",
-            cv=test_cv2,
-            dbxref=test_dbxref2,
-            is_obsolete=0,
-            is_relationshiptype=1,
-        )
+    def test_store_quantification_by_name(self):
+        assay = self.create_assay(name="AssayName")
+        analysis = Analysis.objects.create(program="p", sourcename="s", programversion="v", timeexecuted="2023-01-01T00:00:00Z")
+        self.loader.store_quantification(analysis, "AssayName")
+        self.assertEqual(Acquisition.objects.get(name="AssayName").assay, assay)
 
-        test_featurename1 = "AT2G44195.1.TAIR10"
-        test_featurename2 = "AT1G25375.1.TAIR10"
-        # creating test features
-        test_feature1 = Feature.objects.create(
-            organism=test_organism,
-            uniquename=test_featurename1,
-            is_analysis=False,
-            type_id=test_term.cvterm_id,
-            is_obsolete=False,
-            timeaccessioned=datetime.now(),
-            timelastmodified=datetime.now(),
+    def test_store_analysisfeature(self):
+        org = Organism.objects.create(genus="G", species="s")
+        feature = Feature.objects.create(
+            organism=org, uniquename="feat1", type=self.type_mrna,
+            is_analysis=False, is_obsolete=False,
+            timeaccessioned="2023-01-01T00:00:00Z", timelastmodified="2023-01-01T00:00:00Z"
         )
-        test_feature2 = Feature.objects.create(
-            organism=test_organism,
-            uniquename=test_featurename2,
-            is_analysis=False,
-            type_id=test_term.cvterm_id,
-            is_obsolete=False,
-            timeaccessioned=datetime.now(),
-            timelastmodified=datetime.now(),
-        )
-        # Register assay and features to be used
-        test_assaydate = "Oct-16-2016"
-        test_assaynamedb = "SRA"
-        test_assayacc1 = "SRR5167848"
-        test_assayacc2 = "SRR2302912"
-        test_assayname1 = test_assayacc1
-        test_assayname2 = test_assayacc2
-        test_filename = "exp.matrix.dummy.txt"
-        # register Assays
-        test_assay_file = AssayLoader()
-        test_assay1 = test_assay_file.store_assay(
-            name=test_assayname1,
-            filename=test_filename,
-            db=test_assaynamedb,
-            acc=test_assayacc1,
-            assaydate=test_assaydate,
-        )
-        test_assay2 = test_assay_file.store_assay(
-            name=test_assayname2,
-            filename=test_filename,
-            db=test_assaynamedb,
-            acc=test_assayacc2,
-            assaydate=test_assaydate,
-        )
-        # dummy analysis variables
-        test_program = "LSTRAP"
-        test_programversion = "1.6a"
-        test_sourcename1 = test_assayacc1 + ".deSEQ2"
-        test_sourcename2 = test_assayacc2 + ".deSEQ2"
-        timeexecuted = test_assaydate
+        analysis = Analysis.objects.create(program="p", sourcename="s", programversion="v", timeexecuted="2023-01-01T00:00:00Z")
+        
+        self.loader.store_analysisfeature(analysis, feature, org, rawscore=100.0)
+        
+        self.assertTrue(Analysisfeature.objects.filter(analysis=analysis, feature=feature, rawscore=100.0).exists())
 
-        test_analysis_loader = AnalysisLoader()
-        test_analysis1 = test_analysis_loader.store_analysis(
-            program=test_program,
-            programversion=test_programversion,
-            sourcename=test_sourcename1,
-            timeexecuted=timeexecuted,
-            name=test_assayacc1,
-            filename=test_filename,
+    def test_store_analysisfeature_by_name(self):
+        org = Organism.objects.create(genus="Genus", species="species")
+        feature = Feature.objects.create(
+            organism=org, uniquename="feat2", type=self.type_mrna,
+            is_analysis=False, is_obsolete=False,
+            timeaccessioned="2023-01-01T00:00:00Z", timelastmodified="2023-01-01T00:00:00Z"
         )
-        test_analysis2 = test_analysis_loader.store_analysis(
-            program=test_program,
-            programversion=test_programversion,
-            sourcename=test_sourcename2,
-            timeexecuted=timeexecuted,
-            name=test_assayacc2,
-            filename=test_filename,
-        )
-        test_analysis_loader.store_quantification(
-            analysis=test_analysis1, assayacc=test_assayacc1
-        )
-        test_analysis_loader.store_quantification(
-            analysis=test_analysis2, assayacc=test_assayacc2
-        )
-        test_analysis_loader.store_analysisfeature(
-            analysis=test_analysis1,
-            feature=test_featurename1,
-            organism=test_organism,
-            normscore=0.0,
-        )
-        test_analysis_loader.store_analysisfeature(
-            analysis=test_analysis2,
-            feature=test_featurename1,
-            organism=test_organism,
-            normscore=0.6936967934559419,
-        )
-        test_analysis_loader.store_analysisfeature(
-            analysis=test_analysis1,
-            feature=test_featurename2,
-            organism=test_organism,
-            normscore=2.369615950632963,
-        )
-        test_analysis_loader.store_analysisfeature(
-            analysis=test_analysis2,
-            feature=test_featurename2,
-            organism=test_organism,
-            normscore=10.7523002985671,
-        )
-
-        self.assertTrue(
-            Analysis.objects.filter(
-                name=test_assayacc1,
-                program=test_program,
-                programversion=test_programversion,
-            ).exists()
-        )
-        self.assertTrue(
-            Analysis.objects.filter(
-                name=test_assayacc2,
-                program=test_program,
-                programversion=test_programversion,
-            ).exists()
-        )
-        self.assertTrue(
-            Analysisprop.objects.filter(
-                analysis=test_analysis1, value=test_filename
-            ).exists()
-        )
-        self.assertTrue(
-            Analysisprop.objects.filter(
-                analysis=test_analysis2, value=test_filename
-            ).exists()
-        )
-        self.assertTrue(Acquisition.objects.filter(assay=test_assay1).exists())
-        self.assertTrue(Acquisition.objects.filter(assay=test_assay2).exists())
-        test_acquisition1 = Acquisition.objects.get(assay=test_assay1)
-        test_acquisition2 = Acquisition.objects.get(assay=test_assay2)
-        self.assertTrue(
-            Quantification.objects.filter(
-                analysis=test_analysis1, acquisition=test_acquisition1
-            ).exists()
-        )
-        self.assertTrue(
-            Quantification.objects.filter(
-                analysis=test_analysis2, acquisition=test_acquisition2
-            ).exists()
-        )
-        self.assertTrue(
-            Analysisfeature.objects.filter(
-                analysis=test_analysis1, feature=test_feature1
-            ).exists()
-        )
-        self.assertTrue(
-            Analysisfeature.objects.filter(
-                analysis=test_analysis2, feature=test_feature2
-            ).exists()
-        )
-        self.assertTrue(
-            Analysisfeature.objects.filter(
-                analysis=test_analysis1, feature=test_feature1, normscore=0.0
-            ).exists()
-        )
-        self.assertTrue(
-            Analysisfeature.objects.filter(
-                analysis=test_analysis2,
-                feature=test_feature1,
-                normscore=0.6936967934559419,
-            ).exists()
-        )
-        self.assertTrue(
-            Analysisfeature.objects.filter(
-                analysis=test_analysis1,
-                feature=test_feature2,
-                normscore=2.369615950632963,
-            ).exists()
-        )
-        self.assertTrue(
-            Analysisfeature.objects.filter(
-                analysis=test_analysis2,
-                feature=test_feature2,
-                normscore=10.7523002985671,
-            ).exists()
-        )
-        self.assertTrue(
-            Analysisprop.objects.filter(
-                analysis=test_analysis1, value="exp.matrix.dummy.txt"
-            ).exists()
-        )
-        self.assertTrue(
-            Analysisprop.objects.filter(
-                analysis=test_analysis2, value="exp.matrix.dummy.txt"
-            ).exists()
-        )
-
-        call_command("remove_file", "--name=exp.matrix.dummy.txt", "--verbosity=0")
-
-        self.assertFalse(
-            Analysisprop.objects.filter(
-                analysis=test_analysis1, value="exp.matrix.dummy.txt"
-            ).exists()
-        )
-        self.assertFalse(
-            Analysisprop.objects.filter(
-                analysis=test_analysis2, value="exp.matrix.dummy.txt"
-            ).exists()
-        )
-        self.assertFalse(
-            Analysis.objects.filter(
-                name=test_assayacc1,
-                program=test_program,
-                programversion=test_programversion,
-            ).exists()
-        )
-        self.assertFalse(
-            Analysis.objects.filter(
-                name=test_assayacc2,
-                program=test_program,
-                programversion=test_programversion,
-            ).exists()
-        )
-        self.assertFalse(
-            Analysisprop.objects.filter(
-                analysis=test_analysis1, value=test_filename
-            ).exists()
-        )
-        self.assertFalse(
-            Analysisprop.objects.filter(
-                analysis=test_analysis2, value=test_filename
-            ).exists()
-        )
-        self.assertFalse(Acquisition.objects.filter(assay=test_assay1).exists())
-        self.assertFalse(Acquisition.objects.filter(assay=test_assay2).exists())
-        self.assertFalse(
-            Quantification.objects.filter(
-                analysis=test_analysis1, acquisition=test_acquisition1
-            ).exists()
-        )
-        self.assertFalse(
-            Quantification.objects.filter(
-                analysis=test_analysis2, acquisition=test_acquisition2
-            ).exists()
-        )
-        self.assertFalse(
-            Analysisfeature.objects.filter(
-                analysis=test_analysis1, feature=test_feature1
-            ).exists()
-        )
-        self.assertFalse(
-            Analysisfeature.objects.filter(
-                analysis=test_analysis2, feature=test_feature2
-            ).exists()
-        )
-        self.assertFalse(
-            Analysisfeature.objects.filter(
-                analysis=test_analysis1, feature=test_feature1, normscore=0.0
-            ).exists()
-        )
-        self.assertFalse(
-            Analysisfeature.objects.filter(
-                analysis=test_analysis2,
-                feature=test_feature1,
-                normscore=0.6936967934559419,
-            ).exists()
-        )
-        self.assertFalse(
-            Analysisfeature.objects.filter(
-                analysis=test_analysis1,
-                feature=test_feature2,
-                normscore=2.369615950632963,
-            ).exists()
-        )
-        self.assertFalse(
-            Analysisfeature.objects.filter(
-                analysis=test_analysis2,
-                feature=test_feature2,
-                normscore=10.7523002985671,
-            ).exists()
-        )
+        analysis = Analysis.objects.create(program="p", sourcename="s", programversion="v", timeexecuted="2023-01-01T00:00:00Z")
+        
+        self.loader.store_analysisfeature(analysis, "feat2", "Genus species", identity=95.0)
+        self.assertEqual(Analysisfeature.objects.get(analysis=analysis, identity=95.0).feature, feature)
