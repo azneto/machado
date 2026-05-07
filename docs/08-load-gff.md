@@ -1,0 +1,41 @@
+# Loading GFF Files
+
+The first column of a GFF file is the reference sequence ID. Usually, in order to load a GFF file, it's required to have a reference FASTA file loaded. But some GFF files already have the reference features such as chromosome or scaffold. In this case, there are two options:
+
+- Load the GFF directly, without a reference FASTA file
+- Load the FASTA file and then load the GFF using the parameter `--ignore` to not load the reference features
+
+The GFF file must be indexed using [tabix](http://www.htslib.org/doc/tabix.html).
+
+## Load GFF
+
+```bash
+python manage.py load_gff --file organism_genes_sorted.gff3.gz --organism 'Arabidopsis thaliana'
+```
+
+- Loading this file can be faster if you increase the number of threads (`--cpu`).
+
+```bash
+python manage.py load_gff --help
+```
+
+| Parameter      | Description                                                                            |
+|----------------|----------------------------------------------------------------------------------------|
+| `--file` *     | GFF3 genome file indexed with tabix (see <http://www.htslib.org/doc/tabix.html>)       |
+| `--organism` * | Species name (e.g. *Homo sapiens*, *Mus musculus*)                                     |
+| `--ignore`     | List of feature types to ignore (e.g. chromosome scaffold)                             |
+| `--doi`        | DOI of a reference stored using `load_publication` (e.g. 10.1111/s12122-012-1313-4)    |
+| `--qtl`        | Set this flag to handle GFF files from QTLDB                                           |
+| `--cpu`        | Number of threads                                                                      |
+
+\* required fields
+
+## Remove File
+
+If, for any reason, you need to remove a GFF dataset, use the command `remove_file`. **If you delete a file, every record that depends on it will be deleted on cascade.**
+
+```bash
+python manage.py remove_file --help
+```
+
+- This command requires the file name (`Dbxrefprop.value`).
