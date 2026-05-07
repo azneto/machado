@@ -1000,7 +1000,7 @@ class HistoryListViewSet(viewsets.ViewSet):
     """Retrive all history of insertions."""
 
     def list(self, request):
-        """List"""
+        """List history records."""
         paginate_by = 10
         order_by = request.GET.get("ordering", "-created_at")
         allowed_ordering_fields = [

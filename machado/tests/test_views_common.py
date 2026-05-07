@@ -46,7 +46,9 @@ class DataSummaryTest(TestCase):
             is_obsolete=0,
             is_relationshiptype=0,
         )
-        chromosome_dbxref = Dbxref.objects.create(accession="chromosome", db=so_db)
+        chromosome_dbxref = Dbxref.objects.create(
+            accession="chromosome", db=so_db
+        )
         chromosome_cvterm = Cvterm.objects.create(
             name="chromosome",
             cv=so_cv,
@@ -70,7 +72,9 @@ class DataSummaryTest(TestCase):
             is_obsolete=0,
             is_relationshiptype=0,
         )
-        polypeptide_dbxref = Dbxref.objects.create(accession="polypeptide", db=so_db)
+        polypeptide_dbxref = Dbxref.objects.create(
+            accession="polypeptide", db=so_db
+        )
         polypeptide_cvterm = Cvterm.objects.create(
             name="polypeptide",
             cv=so_cv,
@@ -79,8 +83,12 @@ class DataSummaryTest(TestCase):
             is_relationshiptype=0,
         )
 
-        self.organism1 = Organism.objects.create(genus="Mus", species="musculus")
-        self.organism2 = Organism.objects.create(genus="Homo", species="sapiens")
+        self.organism1 = Organism.objects.create(
+            genus="Mus", species="musculus"
+        )
+        self.organism2 = Organism.objects.create(
+            genus="Homo", species="sapiens"
+        )
 
         Feature.objects.create(
             organism=self.organism1,
@@ -230,7 +238,9 @@ class DataSummaryTest(TestCase):
         doi_dbxref = Dbxref.objects.create(
             accession="10.1186/s12864-016-2535-300002", db=doi_db
         )
-        PubDbxref.objects.create(pub=test_pub, dbxref=doi_dbxref, is_current=True)
+        PubDbxref.objects.create(
+            pub=test_pub, dbxref=doi_dbxref, is_current=True
+        )
 
         OrganismPub.objects.create(organism=self.organism1, pub=test_pub)
 
@@ -243,7 +253,7 @@ class DataSummaryTest(TestCase):
         self.assertContains(response, "mRNA: 2 <br />")
 
     def test_get_no_settings_and_infraspecific(self):
-        """Tests - get without MACHADO_VALID_TYPES and with infraspecific_name."""
+        """Test get without MACHADO_VALID_TYPES and with infraspecific_name."""
         self.factory = RequestFactory()
 
         so_db = Db.objects.create(name="SO")
@@ -300,7 +310,9 @@ class CongratsTest(TestCase):
 
         so_db = Db.objects.create(name="SO")
         so_cv = Cv.objects.create(name="sequence")
-        chromosome_dbxref = Dbxref.objects.create(accession="chromosome", db=so_db)
+        chromosome_dbxref = Dbxref.objects.create(
+            accession="chromosome", db=so_db
+        )
         chromosome_cvterm = Cvterm.objects.create(
             name="chromosome",
             cv=so_cv,
@@ -309,7 +321,9 @@ class CongratsTest(TestCase):
             is_relationshiptype=0,
         )
 
-        test_organism = Organism.objects.create(genus="Arabidopsis", species="thaliana")
+        test_organism = Organism.objects.create(
+            genus="Arabidopsis", species="thaliana"
+        )
         Feature.objects.create(
             organism=test_organism,
             uniquename="chr1",
@@ -341,10 +355,12 @@ class CongratsTest(TestCase):
             'Controlled Vocabularies <span class="badge badge-primary badge-pill">1</span>',
         )
         self.assertContains(
-            response, 'Organisms <span class="badge badge-primary badge-pill">2</span>'
+            response,
+            'Organisms <span class="badge badge-primary badge-pill">2</span>',
         )
         self.assertContains(
-            response, 'Features <span class="badge badge-primary badge-pill">1</span>'
+            response,
+            'Features <span class="badge badge-primary badge-pill">1</span>',
         )
         self.assertContains(
             response,

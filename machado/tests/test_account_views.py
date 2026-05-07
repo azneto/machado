@@ -1,3 +1,5 @@
+"""Module tests."""
+
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
@@ -7,18 +9,26 @@ from rest_framework.authtoken.models import Token
 
 @override_settings(ROOT_URLCONF="machado.account.urls")
 class AccountViewsTest(TestCase):
+    """Test suite for AccountViews."""
+
     def setUp(self):
+        """Set up test context."""
         self.client = APIClient()
         self.user = User.objects.create_user(
-            username="testuser", email="test@example.com", password="password123"
+            username="testuser",
+            email="test@example.com",
+            password="password123",
         )
         self.admin = User.objects.create_superuser(
-            username="admin", email="admin@example.com", password="adminpassword"
+            username="admin",
+            email="admin@example.com",
+            password="adminpassword",
         )
         self.token = Token.objects.create(user=self.user)
         self.admin_token = Token.objects.create(user=self.admin)
 
     def test_login_success(self):
+        """Test login success."""
         response = self.client.post(
             "/login",
             {"email": "test@example.com", "password": "password123"},
@@ -28,12 +38,14 @@ class AccountViewsTest(TestCase):
         self.assertIn("token", response.data)
 
     def test_login_missing_fields(self):
+        """Test login missing fields."""
         response = self.client.post(
             "/login", {"email": "test@example.com"}, format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_login_invalid_credentials(self):
+        """Test login invalid credentials."""
         response = self.client.post(
             "/login",
             {"email": "test@example.com", "password": "wrongpassword"},
@@ -42,6 +54,7 @@ class AccountViewsTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_login_user_not_exist(self):
+        """Test login user not exist."""
         response = self.client.post(
             "/login",
             {"email": "notfound@example.com", "password": "wrongpassword"},
@@ -50,34 +63,40 @@ class AccountViewsTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_logout_success(self):
+        """Test logout success."""
         self.client.force_authenticate(user=self.user, token=self.token)
         response = self.client.post("/logout")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Token.objects.filter(user=self.user).exists())
 
     def test_logout_no_token(self):
+        """Test logout no token."""
         self.client.force_authenticate(user=self.user)
         response = self.client.post("/logout")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_admin_list_users(self):
+        """Test admin list users."""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get("/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
 
     def test_admin_list_user_by_id(self):
+        """Test admin list user by id."""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(f"/{self.user.id}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["username"], "testuser")
 
     def test_admin_list_user_by_id_not_found(self):
+        """Test admin list user by id not found."""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get("/9999")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_admin_list_user_by_username(self):
+        """Test admin list user by username."""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get("/username/testuser")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -85,12 +104,14 @@ class AccountViewsTest(TestCase):
         self.assertEqual(response.data[0]["username"], "testuser")
 
     def test_admin_list_user_by_username_not_found(self):
+        """Test admin list user by username not found."""
         self.client.force_authenticate(user=self.admin)
         response = self.client.get("/username/notfounduser")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
     def test_admin_create_user(self):
+        """Test admin create user."""
         self.client.force_authenticate(user=self.admin)
         data = {
             "username": "newuser",
@@ -104,6 +125,7 @@ class AccountViewsTest(TestCase):
         self.assertTrue(User.objects.filter(username="newuser").exists())
 
     def test_admin_create_user_invalid(self):
+        """Test admin create user invalid."""
         self.client.force_authenticate(user=self.admin)
         data = {
             "username": "testuser",  # Already exists
@@ -114,6 +136,7 @@ class AccountViewsTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_admin_update_user(self):
+        """Test admin update user."""
         self.client.force_authenticate(user=self.admin)
         data = {"first_name": "Updated", "is_staff": 1}
         response = self.client.put(f"/{self.user.id}", data, format="json")
@@ -123,6 +146,7 @@ class AccountViewsTest(TestCase):
         self.assertTrue(self.user.is_staff)
 
     def test_admin_update_user_not_found(self):
+        """Test admin update user not found."""
         self.client.force_authenticate(user=self.admin)
         data = {
             "first_name": "Updated",
@@ -131,12 +155,14 @@ class AccountViewsTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_admin_delete_user(self):
+        """Test admin delete user."""
         self.client.force_authenticate(user=self.admin)
         response = self.client.delete(f"/{self.user.id}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(User.objects.filter(id=self.user.id).exists())
 
     def test_admin_delete_user_not_found(self):
+        """Test admin delete user not found."""
         self.client.force_authenticate(user=self.admin)
         response = self.client.delete("/9999")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

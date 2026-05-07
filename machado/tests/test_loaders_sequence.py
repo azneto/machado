@@ -25,7 +25,10 @@ from machado.models import (
 
 
 class SequenceLoaderTest(TestCase):
+    """Test suite for SequenceLoader."""
+
     def setUp(self):
+        """Set up test context."""
         self.org = Organism.objects.create(genus="Genus", species="species")
         self.db_rel = Cv.objects.create(name="relationship")
         self.db_seq = Cv.objects.create(name="sequence")
@@ -41,7 +44,9 @@ class SequenceLoaderTest(TestCase):
             is_relationshiptype=1,
         )[0]
 
-        self.dbxref_gene = Dbxref.objects.create(db=self.db_internal, accession="gene")
+        self.dbxref_gene = Dbxref.objects.create(
+            db=self.db_internal, accession="gene"
+        )
         self.cvterm_gene = Cvterm.objects.get_or_create(
             name="gene",
             cv=self.db_seq,
@@ -51,11 +56,13 @@ class SequenceLoaderTest(TestCase):
         )[0]
 
     def test_init_without_doi(self):
+        """Test init without doi."""
         loader = SequenceLoader("test.fa", self.org)
         self.assertEqual(loader.filename, "test.fa")
         self.assertTrue(Db.objects.filter(name="FASTA_SOURCE").exists())
 
     def test_init_with_doi(self):
+        """Test init with doi."""
         db_doi = Db.objects.create(name="DOI")
         dbxref_doi = Dbxref.objects.create(db=db_doi, accession="10.1234/test")
         pub = Pub.objects.create(
@@ -67,12 +74,16 @@ class SequenceLoaderTest(TestCase):
         self.assertIsNotNone(loader.pub_dbxref_doi)
 
     def test_init_with_doi_fail_dbxref(self):
+        """Test init with doi fail dbxref."""
         with self.assertRaises(ImportingError):
             SequenceLoader("test.fa", self.org, doi="10.1234/nonexistent")
 
     def test_store_biopython_seq_record_success(self):
+        """Test store biopython seq record success."""
         loader = SequenceLoader("test.fa", self.org)
-        seq_record = SeqRecord(Seq("ATGC"), id="feat1", description="Description 1")
+        seq_record = SeqRecord(
+            Seq("ATGC"), id="feat1", description="Description 1"
+        )
         loader.store_biopython_seq_record(seq_record, "gene")
 
         feature = Feature.objects.get(uniquename="feat1")
@@ -81,6 +92,7 @@ class SequenceLoaderTest(TestCase):
         self.assertEqual(feature.seqlen, 4)
 
     def test_store_biopython_seq_record_already_exists(self):
+        """Test store biopython seq record already exists."""
         loader = SequenceLoader("test.fa", self.org)
         seq_record = SeqRecord(Seq("ATGC"), id="feat1")
         loader.store_biopython_seq_record(seq_record, "gene")
@@ -89,6 +101,7 @@ class SequenceLoaderTest(TestCase):
             loader.store_biopython_seq_record(seq_record, "gene")
 
     def test_store_biopython_seq_record_with_doi(self):
+        """Test store biopython seq record with doi."""
         db_doi = Db.objects.create(name="DOI")
         dbxref_doi = Dbxref.objects.create(db=db_doi, accession="10.1234/test")
         pub = Pub.objects.create(
@@ -101,9 +114,12 @@ class SequenceLoaderTest(TestCase):
         loader.store_biopython_seq_record(seq_record, "gene")
 
         feature = Feature.objects.get(uniquename="feat1")
-        self.assertTrue(FeaturePub.objects.filter(feature=feature, pub=pub).exists())
+        self.assertTrue(
+            FeaturePub.objects.filter(feature=feature, pub=pub).exists()
+        )
 
     def test_add_sequence_to_feature_success(self):
+        """Test add sequence to feature success."""
         loader = SequenceLoader("test.fa", self.org)
         # Create feature first without residues
         Feature.objects.create(
@@ -123,14 +139,18 @@ class SequenceLoaderTest(TestCase):
         self.assertEqual(feature.residues, "ATGC")
 
     def test_add_sequence_to_feature_fail(self):
+        """Test add sequence to feature fail."""
         loader = SequenceLoader("test.fa", self.org)
         seq_record = SeqRecord(Seq("ATGC"), id="nonexistent")
         with self.assertRaisesRegex(ImportingError, "does NOT exist"):
             loader.add_sequence_to_feature(seq_record, "gene")
 
     def test_store_biopython_seq_record_ignore_residues(self):
+        """Test store biopython seq record ignore residues."""
         loader = SequenceLoader("test.fa", self.org)
         seq_record = SeqRecord(Seq("ATGC"), id="feat2")
-        loader.store_biopython_seq_record(seq_record, "gene", ignore_residues=True)
+        loader.store_biopython_seq_record(
+            seq_record, "gene", ignore_residues=True
+        )
         feature = Feature.objects.get(uniquename="feat2")
         self.assertEqual(feature.residues, "")

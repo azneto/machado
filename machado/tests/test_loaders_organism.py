@@ -22,15 +22,20 @@ from machado.models import (
 
 
 class OrganismLoaderTest(TestCase):
+    """Test suite for OrganismLoader."""
+
     def setUp(self):
+        """Set up test context."""
         # Create required metadata for loader init
         self.loader = OrganismLoader()
 
     def test_init_with_db(self):
+        """Test init with db."""
         OrganismLoader(organism_db="TAXONOMY")
         self.assertTrue(Db.objects.filter(name="TAXONOMY").exists())
 
     def test_parse_scientific_name(self):
+        """Test parse scientific name."""
         # Case 1: Genus species
         self.assertEqual(
             self.loader.parse_scientific_name("Genus species"),
@@ -47,6 +52,7 @@ class OrganismLoaderTest(TestCase):
         )
 
     def test_store_organism_record(self):
+        """Test store organism record."""
         loader = OrganismLoader(organism_db="NCBI")
         loader.store_organism_record(
             taxid="1234",
@@ -72,6 +78,7 @@ class OrganismLoaderTest(TestCase):
         )
 
     def test_store_organism_publication(self):
+        """Test store organism publication."""
         org = Organism.objects.create(genus="Genus", species="species")
         db_doi = Db.objects.create(name="DOI")
         dbxref_doi = Dbxref.objects.create(db=db_doi, accession="10.1234/test")
@@ -82,9 +89,12 @@ class OrganismLoaderTest(TestCase):
 
         self.loader.store_organism_publication("Genus species", "10.1234/test")
 
-        self.assertTrue(OrganismPub.objects.filter(organism=org, pub=pub).exists())
+        self.assertTrue(
+            OrganismPub.objects.filter(organism=org, pub=pub).exists()
+        )
 
     def test_store_organism_publication_not_found(self):
+        """Test store organism publication not found."""
         Organism.objects.create(genus="Genus", species="species")
         with self.assertRaisesRegex(ImportingError, "not registered"):
             self.loader.store_organism_publication(

@@ -1,3 +1,5 @@
+"""Module tests."""
+
 import sys
 import tempfile
 import unittest
@@ -8,7 +10,10 @@ from machado.scripts.startproject import main
 
 
 class StartProjectScriptTest(unittest.TestCase):
+    """Test suite for StartProjectScript."""
+
     def test_main(self):
+        """Test main."""
         with tempfile.TemporaryDirectory() as tmpdir:
             test_args = ["machado-startproject", tmpdir, "--verbosity=0"]
             with patch.object(sys, "argv", test_args):
@@ -20,6 +25,7 @@ class StartProjectScriptTest(unittest.TestCase):
             self.assertTrue((target / "manage.py").exists())
 
     def test_main_overwrite(self):
+        """Test main overwrite."""
         with tempfile.TemporaryDirectory() as tmpdir:
             test_args = ["machado-startproject", tmpdir, "--verbosity=0"]
             with patch.object(sys, "argv", test_args):

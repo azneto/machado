@@ -37,7 +37,10 @@ from machado.models import Organism, Feature, History
 
 
 class JBrowseGlobalViewSetTest(TestCase):
+    """Test suite for JBrowseGlobalViewSet."""
+
     def test_list(self):
+        """Test list."""
         factory = APIRequestFactory()
         view = JBrowseGlobalViewSet.as_view({"get": "list"})
         request = factory.get("/api/jbrowse/stats/global")
@@ -47,36 +50,46 @@ class JBrowseGlobalViewSetTest(TestCase):
 
 
 class JBrowseNamesViewSetTest(TestCase):
+    """Test suite for JBrowseNamesViewSet."""
+
     def setUp(self):
+        """Set up test context."""
         self.factory = APIRequestFactory()
 
     @patch("machado.api.views.read.retrieve_organism")
     @patch("machado.api.views.read.Feature.objects.filter")
     def test_list_with_organism(self, mock_filter, mock_retrieve):
+        """Test list with organism."""
         mock_org = MagicMock()
         mock_retrieve.return_value = mock_org
         mock_qs = MagicMock()
         mock_filter.return_value = mock_qs
         mock_qs.exclude.return_value = mock_qs
         view = JBrowseNamesViewSet.as_view({"get": "list"})
-        request = self.factory.get("/api/jbrowse/names", {"organism": "test_org"})
+        request = self.factory.get(
+            "/api/jbrowse/names", {"organism": "test_org"}
+        )
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         mock_qs.filter.assert_any_call(organism=mock_org)
 
     @patch("machado.api.views.read.Feature.objects.filter")
     def test_list_startswith(self, mock_filter):
+        """Test list startswith."""
         mock_qs = MagicMock()
         mock_filter.return_value = mock_qs
         mock_qs.exclude.return_value = mock_qs
         view = JBrowseNamesViewSet.as_view({"get": "list"})
-        request = self.factory.get("/api/jbrowse/names", {"startswith": "test"})
+        request = self.factory.get(
+            "/api/jbrowse/names", {"startswith": "test"}
+        )
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         mock_qs.filter.assert_any_call(uniquename__startswith="test")
 
     @patch("machado.api.views.read.Feature.objects.filter")
     def test_list_equals(self, mock_filter):
+        """Test list equals."""
         mock_qs = MagicMock()
         mock_filter.return_value = mock_qs
         mock_qs.exclude.return_value = mock_qs
@@ -88,12 +101,16 @@ class JBrowseNamesViewSetTest(TestCase):
 
 
 class JBrowseRefSeqsViewSetTest(TestCase):
+    """Test suite for JBrowseRefSeqsViewSet."""
+
     def setUp(self):
+        """Set up test context."""
         self.factory = APIRequestFactory()
 
     @patch("machado.api.views.read.retrieve_organism")
     @patch("machado.api.views.read.Feature.objects.filter")
     def test_list(self, mock_filter, mock_retrieve):
+        """Test list."""
         mock_org = MagicMock()
         mock_retrieve.return_value = mock_org
         mock_qs = MagicMock()
@@ -112,6 +129,7 @@ class JBrowseRefSeqsViewSetTest(TestCase):
     @patch("machado.api.views.read.retrieve_organism")
     @patch("machado.api.views.read.Feature.objects.filter")
     def test_list_minimal(self, mock_filter, mock_retrieve):
+        """Test list minimal."""
         mock_qs = MagicMock()
         mock_filter.return_value = mock_qs
         mock_qs.filter.return_value = mock_qs
@@ -123,13 +141,17 @@ class JBrowseRefSeqsViewSetTest(TestCase):
 
 
 class JBrowseFeatureViewSetTest(TestCase):
+    """Test suite for JBrowseFeatureViewSet."""
+
     def setUp(self):
+        """Set up test context."""
         self.factory = APIRequestFactory()
 
     @patch("machado.api.views.read.retrieve_organism")
     @patch("machado.api.views.read.Feature.objects.filter")
     @patch("machado.api.views.read.Featureloc.objects.filter")
     def test_list(self, mock_fl_filter, mock_f_filter, mock_retrieve):
+        """Test list."""
         mock_org = MagicMock()
         mock_retrieve.return_value = mock_org
         mock_refseq = MagicMock()
@@ -150,7 +172,12 @@ class JBrowseFeatureViewSetTest(TestCase):
         view = JBrowseFeatureViewSet.as_view({"get": "list"})
         request = self.factory.get(
             "/api/jbrowse/features/refseq1",
-            {"organism": "test_org", "start": 100, "end": 200, "soType": "gene"},
+            {
+                "organism": "test_org",
+                "start": 100,
+                "end": 200,
+                "soType": "gene",
+            },
         )
         response = view(request, refseq="refseq1")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -159,6 +186,7 @@ class JBrowseFeatureViewSetTest(TestCase):
     @patch("machado.api.views.read.retrieve_organism")
     @patch("machado.api.views.read.Feature.objects.filter")
     def test_list_not_found(self, mock_f_filter, mock_retrieve):
+        """Test list not found."""
         # Return None to avoid crash in get_serializer_context
         mock_retrieve.return_value = None
         mock_f_filter.return_value.first.return_value = None
@@ -172,11 +200,15 @@ class JBrowseFeatureViewSetTest(TestCase):
 
 
 class AutocompleteViewSetTest(TestCase):
+    """Test suite for AutocompleteViewSet."""
+
     def setUp(self):
+        """Set up test context."""
         self.factory = APIRequestFactory()
 
     @patch("machado.api.views.read.SearchQuerySet")
     def test_list(self, mock_sqs):
+        """Test list."""
         mock_item = MagicMock()
         mock_item.autocomplete = "test string"
         mock_sqs.return_value.filter.return_value = [mock_item]
@@ -189,6 +221,7 @@ class AutocompleteViewSetTest(TestCase):
     @patch("machado.api.views.read.SearchQuerySet")
     @patch("machado.api.views.read.search")
     def test_list_attribute_error(self, mock_search, mock_sqs):
+        """Test list attribute error."""
         mock_item = MagicMock()
         mock_item.autocomplete = "test string"
         mock_sqs.return_value.filter.return_value = [mock_item]
@@ -200,6 +233,7 @@ class AutocompleteViewSetTest(TestCase):
         self.assertEqual(response.data, [])
 
     def test_list_no_query(self):
+        """Test list no query."""
         view = autocompleteViewSet.as_view({"get": "list"})
         request = self.factory.get("/api/autocomplete")
         response = view(request)
@@ -208,10 +242,14 @@ class AutocompleteViewSetTest(TestCase):
 
 
 class OrganismIDViewSetTest(TestCase):
+    """Test suite for OrganismIDViewSet."""
+
     def setUp(self):
+        """Set up test context."""
         self.factory = APIRequestFactory()
 
     def test_list_success(self):
+        """Test list success."""
         org = Organism.objects.create(genus="GenusA", species="speciesA")
         view = OrganismIDViewSet.as_view({"get": "list"})
         request = self.factory.get(
@@ -222,6 +260,7 @@ class OrganismIDViewSetTest(TestCase):
         self.assertEqual(response.data["organism_id"], org.organism_id)
 
     def test_list_all_params(self):
+        """Test list all params."""
         org = Organism.objects.create(
             genus="GenusB",
             species="speciesB",
@@ -243,6 +282,7 @@ class OrganismIDViewSetTest(TestCase):
 
     @patch("machado.api.views.read.Organism.objects.filter")
     def test_list_not_found(self, mock_filter):
+        """Test list not found."""
         mock_filter.return_value.get.side_effect = ObjectDoesNotExist
         view = OrganismIDViewSet.as_view({"get": "list"})
         request = self.factory.get("/api/organism/id", {"genus": "G"})
@@ -251,6 +291,7 @@ class OrganismIDViewSetTest(TestCase):
 
     @patch("machado.api.views.read.Organism.objects.filter")
     def test_list_multiple(self, mock_filter):
+        """Test list multiple."""
         mock_filter.return_value.get.side_effect = MultipleObjectsReturned
         view = OrganismIDViewSet.as_view({"get": "list"})
         request = self.factory.get("/api/organism/id", {"genus": "G"})
@@ -259,8 +300,11 @@ class OrganismIDViewSetTest(TestCase):
 
 
 class OrganismListViewSetTest(TestCase):
+    """Test suite for OrganismListViewSet."""
+
     @patch("machado.api.views.read.Organism.objects.exclude")
     def test_list(self, mock_exclude):
+        """Test list."""
         mock_exclude.return_value = []
         factory = APIRequestFactory()
         view = OrganismListViewSet.as_view({"get": "list"})
@@ -270,16 +314,21 @@ class OrganismListViewSetTest(TestCase):
 
 
 class FeatureIDViewSetTest(TestCase):
+    """Test suite for FeatureIDViewSet."""
+
     def setUp(self):
+        """Set up test context."""
         self.factory = APIRequestFactory()
 
     @patch("machado.api.views.read.Organism.objects.get")
     @patch("machado.api.views.read.retrieve_feature_id")
     def test_list_success(self, mock_retrieve, mock_org_get):
+        """Test list success."""
         mock_retrieve.return_value = 456
         view = FeatureIDViewSet.as_view({"get": "list"})
         request = self.factory.get(
-            "/api/feature/id", {"accession": "acc1", "soType": "gene", "organism_id": 1}
+            "/api/feature/id",
+            {"accession": "acc1", "soType": "gene", "organism_id": 1},
         )
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -288,23 +337,29 @@ class FeatureIDViewSetTest(TestCase):
     @patch("machado.api.views.read.Organism.objects.get")
     @patch("machado.api.views.read.retrieve_feature_id")
     def test_list_not_found(self, mock_retrieve, mock_org_get):
+        """Test list not found."""
         mock_retrieve.side_effect = ObjectDoesNotExist
         view = FeatureIDViewSet.as_view({"get": "list"})
         request = self.factory.get(
-            "/api/feature/id", {"accession": "acc1", "soType": "gene", "organism_id": 1}
+            "/api/feature/id",
+            {"accession": "acc1", "soType": "gene", "organism_id": 1},
         )
         response = view(request)
         self.assertEqual(response.data, {"feature_id": None})
 
 
 class FeatureOrthologViewSetTest(TestCase):
+    """Test suite for FeatureOrthologViewSet."""
+
     def setUp(self):
+        """Set up test context."""
         self.factory = APIRequestFactory()
 
     @patch("machado.api.views.read.Feature.objects.get")
     @patch("machado.api.views.read.Featureprop.objects.get")
     @patch("machado.api.views.read.Feature.objects.filter")
     def test_list_success(self, mock_f_filter, mock_fp_get, mock_f_get):
+        """Test list success."""
         mock_f_get.return_value.get_orthologous_group.return_value = "OG1"
         mock_fp_get.return_value.value = "OG1"
         mock_f_filter.return_value = []
@@ -316,22 +371,28 @@ class FeatureOrthologViewSetTest(TestCase):
 
     @patch("machado.api.views.read.Feature.objects.get")
     def test_list_not_found(self, mock_f_get):
+        """Test list not found."""
         mock_f_get.side_effect = ObjectDoesNotExist
         view = FeatureOrthologViewSet.as_view({"get": "list"})
         request = self.factory.get("/api/feature/ortholog/1")
         response = view(request, feature_id=1)
-        # Note: There is a bug in read.py where it returns coexpression_group here
+        # Note: There is a bug in read.py where it returns coexpression_group
+        # here
         self.assertEqual(response.data["coexpression_group"], None)
 
 
 class FeatureCoexpressionViewSetTest(TestCase):
+    """Test suite for FeatureCoexpressionViewSet."""
+
     def setUp(self):
+        """Set up test context."""
         self.factory = APIRequestFactory()
 
     @patch("machado.api.views.read.Feature.objects.get")
     @patch("machado.api.views.read.Featureprop.objects.get")
     @patch("machado.api.views.read.Feature.objects.filter")
     def test_list_success(self, mock_f_filter, mock_fp_get, mock_f_get):
+        """Test list success."""
         mock_f_get.return_value.get_coexpression_group.return_value = "CG1"
         mock_fp_get.return_value.value = "CG1"
         mock_f_filter.return_value = []
@@ -343,11 +404,15 @@ class FeatureCoexpressionViewSetTest(TestCase):
 
 
 class FeatureExpressionViewSetTest(TestCase):
+    """Test suite for FeatureExpressionViewSet."""
+
     def setUp(self):
+        """Set up test context."""
         self.factory = APIRequestFactory()
 
     @patch("machado.api.views.read.Feature.objects.get")
     def test_list_success(self, mock_f_get):
+        """Test list success."""
         mock_f_get.return_value.get_expression_samples.return_value = []
         view = FeatureExpressionViewSet.as_view({"get": "list"})
         request = self.factory.get("/api/feature/expression/1")
@@ -356,6 +421,7 @@ class FeatureExpressionViewSetTest(TestCase):
 
     @patch("machado.api.views.read.Feature.objects.get")
     def test_list_not_found(self, mock_f_get):
+        """Test list not found."""
         mock_f_get.side_effect = ObjectDoesNotExist
         view = FeatureExpressionViewSet.as_view({"get": "list"})
         request = self.factory.get("/api/feature/expression/1")
@@ -364,8 +430,11 @@ class FeatureExpressionViewSetTest(TestCase):
 
 
 class FeatureInfoViewSetTest(TestCase):
+    """Test suite for FeatureInfoViewSet."""
+
     @patch("machado.api.views.read.Feature.objects.get")
     def test_list(self, mock_f_get):
+        """Test list."""
         mock_f_get.return_value = MagicMock(spec=Feature)
         factory = APIRequestFactory()
         view = FeatureInfoViewSet.as_view({"get": "list"})
@@ -375,8 +444,11 @@ class FeatureInfoViewSetTest(TestCase):
 
 
 class FeatureLocationViewSetTest(TestCase):
+    """Test suite for FeatureLocationViewSet."""
+
     @patch("machado.api.views.read.Feature.objects.get")
     def test_list(self, mock_f_get):
+        """Test list."""
         mock_f_get.return_value.get_location.return_value = []
         factory = APIRequestFactory()
         view = FeatureLocationViewSet.as_view({"get": "list"})
@@ -386,8 +458,11 @@ class FeatureLocationViewSetTest(TestCase):
 
 
 class FeatureSequenceViewSetTest(TestCase):
+    """Test suite for FeatureSequenceViewSet."""
+
     @patch("machado.api.views.read.Feature.objects.get")
     def test_list(self, mock_f_get):
+        """Test list."""
         mock_f_get.return_value = MagicMock(spec=Feature)
         factory = APIRequestFactory()
         view = FeatureSequenceViewSet.as_view({"get": "list"})
@@ -397,8 +472,11 @@ class FeatureSequenceViewSetTest(TestCase):
 
 
 class FeaturePublicationViewSetTest(TestCase):
+    """Test suite for FeaturePublicationViewSet."""
+
     @patch("machado.api.views.read.Pub.objects.filter")
     def test_list(self, mock_filter):
+        """Test list."""
         mock_filter.return_value = []
         factory = APIRequestFactory()
         view = FeaturePublicationViewSet.as_view({"get": "list"})
@@ -408,8 +486,11 @@ class FeaturePublicationViewSetTest(TestCase):
 
 
 class FeatureOntologyViewSetTest(TestCase):
+    """Test suite for FeatureOntologyViewSet."""
+
     @patch("machado.api.views.read.Cvterm.objects.filter")
     def test_list(self, mock_filter):
+        """Test list."""
         mock_filter.return_value = []
         factory = APIRequestFactory()
         view = FeatureOntologyViewSet.as_view({"get": "list"})
@@ -419,8 +500,11 @@ class FeatureOntologyViewSetTest(TestCase):
 
 
 class FeatureProteinMatchesViewSetTest(TestCase):
+    """Test suite for FeatureProteinMatchesViewSet."""
+
     @patch("machado.api.views.read.FeatureRelationship.objects.filter")
     def test_list(self, mock_filter):
+        """Test list."""
         mock_filter.return_value = []
         factory = APIRequestFactory()
         view = FeatureProteinMatchesViewSet.as_view({"get": "list"})
@@ -430,13 +514,17 @@ class FeatureProteinMatchesViewSetTest(TestCase):
 
 
 class FeatureSimilarityViewSetTest(TestCase):
+    """Test suite for FeatureSimilarityViewSet."""
+
     def setUp(self):
+        """Set up test context."""
         self.factory = APIRequestFactory()
 
     @patch("machado.api.views.read.Featureloc.objects.filter")
     @patch("machado.api.views.read.Analysisfeature.objects.get")
     @patch("machado.api.views.read.Analysis.objects.get")
     def test_list(self, mock_a_get, mock_af_get, mock_fl_filter):
+        """Test list."""
         mock_match = MagicMock()
         mock_match.srcfeature.dbxref.db.name = "db"
         mock_match.srcfeature.uniquename = "hit1"
@@ -476,6 +564,7 @@ class FeatureSimilarityViewSetTest(TestCase):
 
     @patch("machado.api.views.read.Featureloc.objects.filter")
     def test_list_not_found(self, mock_fl_filter):
+        """Test list not found."""
         mock_fl_filter.side_effect = ObjectDoesNotExist
         view = FeatureSimilarityViewSet.as_view({"get": "list"})
         request = self.factory.get("/api/feature/similarity/1")
@@ -486,6 +575,7 @@ class FeatureSimilarityViewSetTest(TestCase):
     @patch("machado.api.views.read.Analysisfeature.objects.get")
     @patch("machado.api.views.read.Analysis.objects.get")
     def test_list_rawscore(self, mock_a_get, mock_af_get, mock_fl_filter):
+        """Test list rawscore."""
         mock_match = MagicMock()
         mock_match.srcfeature.dbxref.db.name = "db"
         mock_match.srcfeature.uniquename = "hit1"
@@ -525,7 +615,10 @@ class FeatureSimilarityViewSetTest(TestCase):
 
 
 class HistoryListViewSetTest(TestCase):
+    """Test suite for HistoryListViewSet."""
+
     def test_list(self):
+        """Test list."""
         History.objects.create(command="test", description="desc")
         factory = APIRequestFactory()
         view = HistoryListViewSet.as_view({"get": "list"})
@@ -535,6 +628,7 @@ class HistoryListViewSetTest(TestCase):
         self.assertEqual(len(response.data["results"]), 1)
 
     def test_list_with_search_and_order(self):
+        """Test list with search and order."""
         History.objects.create(command="cmd1", description="desc1")
         History.objects.create(command="cmd2", description="desc2")
         factory = APIRequestFactory()
@@ -547,6 +641,7 @@ class HistoryListViewSetTest(TestCase):
         self.assertEqual(response.data["results"][0]["command"], "cmd1")
 
     def test_list_invalid_order(self):
+        """Test list invalid order."""
         History.objects.create(command="cmd1")
         factory = APIRequestFactory()
         view = HistoryListViewSet.as_view({"get": "list"})

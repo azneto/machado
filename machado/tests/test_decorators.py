@@ -37,6 +37,7 @@ class GetFeatureDbxrefsTest(TestCase):
     """Tests for get_feature_dbxrefs."""
 
     def test_with_url(self):
+        """Test with url."""
         mock_dbxref = MagicMock()
         mock_dbxref.dbxref.db.url = "www.example.com/"
         mock_dbxref.dbxref.db.urlprefix = "https"
@@ -44,7 +45,9 @@ class GetFeatureDbxrefsTest(TestCase):
         mock_dbxref.dbxref.db.name = "TestDB"
 
         mock_self = MagicMock()
-        mock_self.FeatureDbxref_feature_Feature.all.return_value = [mock_dbxref]
+        mock_self.FeatureDbxref_feature_Feature.all.return_value = [
+            mock_dbxref
+        ]
 
         result = get_feature_dbxrefs(mock_self)
         self.assertEqual(len(result), 1)
@@ -52,19 +55,23 @@ class GetFeatureDbxrefsTest(TestCase):
         self.assertIn("href='https://www.example.com/12345'", result[0])
 
     def test_without_url(self):
+        """Test without url."""
         mock_dbxref = MagicMock()
         mock_dbxref.dbxref.db.url = None
         mock_dbxref.dbxref.db.name = "LocalDB"
         mock_dbxref.dbxref.accession = "67890"
 
         mock_self = MagicMock()
-        mock_self.FeatureDbxref_feature_Feature.all.return_value = [mock_dbxref]
+        mock_self.FeatureDbxref_feature_Feature.all.return_value = [
+            mock_dbxref
+        ]
 
         result = get_feature_dbxrefs(mock_self)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0], "LocalDB:67890")
 
     def test_empty(self):
+        """Test empty."""
         mock_self = MagicMock()
         mock_self.FeatureDbxref_feature_Feature.all.return_value = []
 
@@ -73,41 +80,59 @@ class GetFeatureDbxrefsTest(TestCase):
 
 
 class GetFeaturePropTest(TestCase):
-    """Tests for get_feature_product, get_feature_description, get_feature_note."""
+    """Tests for feature properties decorators."""
 
     def test_product_found(self):
+        """Test product found."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.return_value.value = "some product"
+        mock_self.Featureprop_feature_Feature.get.return_value.value = (
+            "some product"
+        )
         result = get_feature_product(mock_self)
         self.assertEqual(result, "some product")
 
     def test_product_not_found(self):
+        """Test product not found."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.side_effect = ObjectDoesNotExist
+        mock_self.Featureprop_feature_Feature.get.side_effect = (
+            ObjectDoesNotExist
+        )
         result = get_feature_product(mock_self)
         self.assertIsNone(result)
 
     def test_description_found(self):
+        """Test description found."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.return_value.value = "some desc"
+        mock_self.Featureprop_feature_Feature.get.return_value.value = (
+            "some desc"
+        )
         result = get_feature_description(mock_self)
         self.assertEqual(result, "some desc")
 
     def test_description_not_found(self):
+        """Test description not found."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.side_effect = ObjectDoesNotExist
+        mock_self.Featureprop_feature_Feature.get.side_effect = (
+            ObjectDoesNotExist
+        )
         result = get_feature_description(mock_self)
         self.assertIsNone(result)
 
     def test_note_found(self):
+        """Test note found."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.return_value.value = "some note"
+        mock_self.Featureprop_feature_Feature.get.return_value.value = (
+            "some note"
+        )
         result = get_feature_note(mock_self)
         self.assertEqual(result, "some note")
 
     def test_note_not_found(self):
+        """Test note not found."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.side_effect = ObjectDoesNotExist
+        mock_self.Featureprop_feature_Feature.get.side_effect = (
+            ObjectDoesNotExist
+        )
         result = get_feature_note(mock_self)
         self.assertIsNone(result)
 
@@ -116,6 +141,7 @@ class GetFeatureAnnotationTest(TestCase):
     """Tests for get_feature_annotation."""
 
     def test_annotation_with_doi(self):
+        """Test annotation with doi."""
         mock_fp = MagicMock()
         mock_fp.value = "Annotation text"
         mock_fp.FeaturepropPub_featureprop_Featureprop.get.return_value.pub.get_doi.return_value = (
@@ -130,6 +156,7 @@ class GetFeatureAnnotationTest(TestCase):
         self.assertIn("DOI:10.1234/test", result[0])
 
     def test_annotation_without_doi(self):
+        """Test annotation without doi."""
         mock_fp = MagicMock()
         mock_fp.value = "Annotation text"
         mock_fp.FeaturepropPub_featureprop_Featureprop.get.side_effect = (
@@ -143,8 +170,11 @@ class GetFeatureAnnotationTest(TestCase):
         self.assertEqual(result, ["Annotation text"])
 
     def test_annotation_not_found(self):
+        """Test annotation not found."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.filter.side_effect = ObjectDoesNotExist
+        mock_self.Featureprop_feature_Feature.filter.side_effect = (
+            ObjectDoesNotExist
+        )
 
         result = get_feature_annotation(mock_self)
         self.assertIsNone(result)
@@ -154,6 +184,7 @@ class GetFeatureDoiTest(TestCase):
     """Tests for get_feature_doi."""
 
     def test_doi_from_pubs_and_annotations(self):
+        """Test doi from pubs and annotations."""
         mock_featurepub = MagicMock()
         mock_featurepub.pub.get_doi.return_value = "10.1234/pub"
 
@@ -163,7 +194,9 @@ class GetFeatureDoiTest(TestCase):
         )
 
         mock_self = MagicMock()
-        mock_self.FeaturePub_feature_Feature.filter.return_value = [mock_featurepub]
+        mock_self.FeaturePub_feature_Feature.filter.return_value = [
+            mock_featurepub
+        ]
         mock_self.Featureprop_feature_Feature.filter.return_value = [mock_fp]
 
         result = get_feature_doi(mock_self)
@@ -171,6 +204,7 @@ class GetFeatureDoiTest(TestCase):
         self.assertIn("10.1234/annot", result)
 
     def test_doi_annotation_no_doi(self):
+        """Test doi annotation no doi."""
         mock_featurepub = MagicMock()
         mock_featurepub.pub.get_doi.return_value = "10.1234/pub"
 
@@ -180,7 +214,9 @@ class GetFeatureDoiTest(TestCase):
         )
 
         mock_self = MagicMock()
-        mock_self.FeaturePub_feature_Feature.filter.return_value = [mock_featurepub]
+        mock_self.FeaturePub_feature_Feature.filter.return_value = [
+            mock_featurepub
+        ]
         mock_self.Featureprop_feature_Feature.filter.return_value = [mock_fp]
 
         result = get_feature_doi(mock_self)
@@ -188,9 +224,12 @@ class GetFeatureDoiTest(TestCase):
         self.assertEqual(len(result), 1)
 
     def test_doi_filter_raises(self):
+        """Test doi filter raises."""
         mock_self = MagicMock()
         mock_self.FeaturePub_feature_Feature.filter.return_value = []
-        mock_self.Featureprop_feature_Feature.filter.side_effect = ObjectDoesNotExist
+        mock_self.Featureprop_feature_Feature.filter.side_effect = (
+            ObjectDoesNotExist
+        )
 
         result = get_feature_doi(mock_self)
         self.assertIsNone(result)
@@ -200,29 +239,41 @@ class GetFeatureDisplayTest(TestCase):
     """Tests for get_feature_display."""
 
     def test_display_found(self):
+        """Test display found."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.return_value.value = "display text"
+        mock_self.Featureprop_feature_Feature.get.return_value.value = (
+            "display text"
+        )
         result = get_feature_display(mock_self)
         self.assertEqual(result, "display text")
 
     def test_display_fallback_product(self):
+        """Test display fallback product."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.side_effect = ObjectDoesNotExist
+        mock_self.Featureprop_feature_Feature.get.side_effect = (
+            ObjectDoesNotExist
+        )
         mock_self.get_product.return_value = "product text"
         result = get_feature_display(mock_self)
         self.assertEqual(result, "product text")
 
     def test_display_fallback_description(self):
+        """Test display fallback description."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.side_effect = ObjectDoesNotExist
+        mock_self.Featureprop_feature_Feature.get.side_effect = (
+            ObjectDoesNotExist
+        )
         mock_self.get_product.return_value = None
         mock_self.get_description.return_value = "desc text"
         result = get_feature_display(mock_self)
         self.assertEqual(result, "desc text")
 
     def test_display_fallback_note(self):
+        """Test display fallback note."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.side_effect = ObjectDoesNotExist
+        mock_self.Featureprop_feature_Feature.get.side_effect = (
+            ObjectDoesNotExist
+        )
         mock_self.get_product.return_value = None
         mock_self.get_description.return_value = None
         mock_self.get_note.return_value = "note text"
@@ -230,8 +281,11 @@ class GetFeatureDisplayTest(TestCase):
         self.assertEqual(result, "note text")
 
     def test_display_fallback_none(self):
+        """Test display fallback none."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.side_effect = ObjectDoesNotExist
+        mock_self.Featureprop_feature_Feature.get.side_effect = (
+            ObjectDoesNotExist
+        )
         mock_self.get_product.return_value = None
         mock_self.get_description.return_value = None
         mock_self.get_note.return_value = None
@@ -243,6 +297,7 @@ class GetFeaturePropertiesTest(TestCase):
     """Tests for get_feature_properties."""
 
     def test_properties_found(self):
+        """Test properties found."""
         mock_qs = MagicMock()
         mock_qs.exclude.return_value.order_by.return_value.values_list.return_value = [
             ("product", "val1"),
@@ -255,8 +310,11 @@ class GetFeaturePropertiesTest(TestCase):
         self.assertEqual(len(result), 2)
 
     def test_properties_not_found(self):
+        """Test properties not found."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.filter.side_effect = ObjectDoesNotExist
+        mock_self.Featureprop_feature_Feature.filter.side_effect = (
+            ObjectDoesNotExist
+        )
 
         result = get_feature_properties(mock_self)
         self.assertEqual(result, [])
@@ -266,6 +324,7 @@ class GetFeatureSynonymsTest(TestCase):
     """Tests for get_feature_synonyms."""
 
     def test_synonyms(self):
+        """Test synonyms."""
         mock_syn = MagicMock()
         mock_syn.synonym.name = "SynonymA"
 
@@ -276,6 +335,7 @@ class GetFeatureSynonymsTest(TestCase):
         self.assertEqual(result, ["SynonymA"])
 
     def test_no_synonyms(self):
+        """Test no synonyms."""
         mock_self = MagicMock()
         mock_self.FeatureSynonym_feature_Feature.all.return_value = []
 
@@ -287,14 +347,18 @@ class GetFeatureOrthologousGroupTest(TestCase):
     """Tests for get_feature_orthologous_group."""
 
     def test_found(self):
+        """Test found."""
         mock_self = MagicMock()
         mock_self.Featureprop_feature_Feature.get.return_value.value = "OG001"
         result = get_feature_orthologous_group(mock_self)
         self.assertEqual(result, "OG001")
 
     def test_not_found(self):
+        """Test not found."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.side_effect = ObjectDoesNotExist
+        mock_self.Featureprop_feature_Feature.get.side_effect = (
+            ObjectDoesNotExist
+        )
         result = get_feature_orthologous_group(mock_self)
         self.assertIsNone(result)
 
@@ -303,14 +367,18 @@ class GetFeatureCoexpressionGroupTest(TestCase):
     """Tests for get_feature_coexpression_group."""
 
     def test_found(self):
+        """Test found."""
         mock_self = MagicMock()
         mock_self.Featureprop_feature_Feature.get.return_value.value = "CG001"
         result = get_feature_coexpression_group(mock_self)
         self.assertEqual(result, "CG001")
 
     def test_not_found(self):
+        """Test not found."""
         mock_self = MagicMock()
-        mock_self.Featureprop_feature_Feature.get.side_effect = ObjectDoesNotExist
+        mock_self.Featureprop_feature_Feature.get.side_effect = (
+            ObjectDoesNotExist
+        )
         result = get_feature_coexpression_group(mock_self)
         self.assertIsNone(result)
 
@@ -319,20 +387,26 @@ class GetFeatureExpressionSamplesTest(TestCase):
     """Tests for get_feature_expression_samples."""
 
     def test_samples_found(self):
+        """Test samples found."""
         mock_qs = MagicMock()
         mock_qs.annotate.return_value = mock_qs
         mock_qs.filter.return_value = mock_qs
         mock_qs.exclude.return_value = mock_qs
-        mock_qs.values.return_value = [{"analysis__sourcename": "A", "normscore": 1.0}]
+        mock_qs.values.return_value = [
+            {"analysis__sourcename": "A", "normscore": 1.0}
+        ]
 
         mock_self = MagicMock()
-        mock_self.Analysisfeature_feature_Feature.annotate.return_value = mock_qs
+        mock_self.Analysisfeature_feature_Feature.annotate.return_value = (
+            mock_qs
+        )
 
         result = get_feature_expression_samples(mock_self)
         self.assertIsNotNone(result)
         self.assertEqual(len(result), 1)
 
     def test_samples_not_found(self):
+        """Test samples not found."""
         mock_self = MagicMock()
         mock_self.Analysisfeature_feature_Feature.annotate.side_effect = (
             ObjectDoesNotExist
@@ -347,13 +421,16 @@ class GetFeatureRelationshipTest(TestCase):
 
     @override_settings(MACHADO_VALID_TYPES=["gene", "mRNA", "polypeptide"])
     def test_relationship_object_side(self):
+        """Test relationship object side."""
         mock_subject = MagicMock()
         mock_subject.type.name = "gene"
         mock_rel = MagicMock()
         mock_rel.subject = mock_subject
 
         mock_self = MagicMock()
-        mock_self.FeatureRelationship_object_Feature.filter.return_value = [mock_rel]
+        mock_self.FeatureRelationship_object_Feature.filter.return_value = [
+            mock_rel
+        ]
         mock_self.FeatureRelationship_subject_Feature.filter.return_value = []
 
         result = get_feature_relationship(mock_self)
@@ -361,6 +438,7 @@ class GetFeatureRelationshipTest(TestCase):
 
     @override_settings(MACHADO_VALID_TYPES=["gene", "mRNA", "polypeptide"])
     def test_relationship_subject_side(self):
+        """Test relationship subject side."""
         mock_object = MagicMock()
         mock_object.type.name = "mRNA"
         mock_rel = MagicMock()
@@ -368,13 +446,16 @@ class GetFeatureRelationshipTest(TestCase):
 
         mock_self = MagicMock()
         mock_self.FeatureRelationship_object_Feature.filter.return_value = []
-        mock_self.FeatureRelationship_subject_Feature.filter.return_value = [mock_rel]
+        mock_self.FeatureRelationship_subject_Feature.filter.return_value = [
+            mock_rel
+        ]
 
         result = get_feature_relationship(mock_self)
         self.assertIn(mock_object, result)
 
     @override_settings(MACHADO_VALID_TYPES=["gene"])
     def test_relationship_filtered_by_valid_types(self):
+        """Test relationship filtered by valid types."""
         mock_subject = MagicMock()
         mock_subject.type.name = "CDS"  # Not in MACHADO_VALID_TYPES
 
@@ -382,13 +463,16 @@ class GetFeatureRelationshipTest(TestCase):
         mock_rel.subject = mock_subject
 
         mock_self = MagicMock()
-        mock_self.FeatureRelationship_object_Feature.filter.return_value = [mock_rel]
+        mock_self.FeatureRelationship_object_Feature.filter.return_value = [
+            mock_rel
+        ]
         mock_self.FeatureRelationship_subject_Feature.filter.return_value = []
 
         result = get_feature_relationship(mock_self)
         self.assertEqual(result, [])
 
     def test_relationship_no_valid_types_setting(self):
+        """Test relationship no valid types setting."""
         mock_self = MagicMock()
         with self.settings():
             # Remove MACHADO_VALID_TYPES from settings
@@ -404,6 +488,7 @@ class GetFeatureCvtermTest(TestCase):
     """Tests for get_feature_cvterm."""
 
     def test_cvterm(self):
+        """Test cvterm."""
         mock_qs = MagicMock()
         mock_qs.values.return_value = [{"name": "gene", "cv": "sequence"}]
 
@@ -423,6 +508,7 @@ class GetFeatureLocationTest(TestCase):
         MACHADO_JBROWSE_TRACKS="ref_seq,gene",
     )
     def test_location_with_jbrowse_full_settings(self):
+        """Test location with jbrowse full settings."""
         mock_loc = MagicMock()
         mock_loc.srcfeature.uniquename = "chr1"
         mock_loc.srcfeature.organism.genus = "Glycine"
@@ -450,6 +536,7 @@ class GetFeatureLocationTest(TestCase):
         MACHADO_JBROWSE_TRACKS="ref_seq,gene",
     )
     def test_location_with_infraspecific_name(self):
+        """Test location with infraspecific name."""
         mock_loc = MagicMock()
         mock_loc.srcfeature.uniquename = "chr1"
         mock_loc.srcfeature.organism.genus = "Glycine"
@@ -468,7 +555,7 @@ class GetFeatureLocationTest(TestCase):
 
     @override_settings(MACHADO_JBROWSE_URL="http://localhost/jbrowse")
     def test_location_default_tracks_and_offset(self):
-        """Test defaults when MACHADO_JBROWSE_TRACKS and MACHADO_JBROWSE_OFFSET are not set."""
+        """Test defaults when jbrowse tracks and offset are not set."""
         from django.conf import settings
 
         if hasattr(settings, "MACHADO_JBROWSE_TRACKS"):
@@ -523,6 +610,7 @@ class GetFeatureLocationTest(TestCase):
         self.assertEqual(result, [])
 
     def test_location_empty(self):
+        """Test location empty."""
         mock_self = MagicMock()
         mock_self.Featureloc_feature_Feature.all.return_value = []
         result = get_feature_location(mock_self)
@@ -533,8 +621,12 @@ class MachadoFeatureMethodsTest(TestCase):
     """Tests for the machado_feature_methods decorator."""
 
     def test_decorator_adds_methods(self):
+        """Test decorator adds methods."""
+
         @machado_feature_methods()
         class DummyFeature:
+            """Test suite for DummyFeature."""
+
             pass
 
         self.assertTrue(hasattr(DummyFeature, "get_dbxrefs"))
@@ -558,6 +650,7 @@ class GetPubAuthorsTest(TestCase):
     """Tests for get_pub_authors."""
 
     def test_authors(self):
+        """Test authors."""
         mock_qs = MagicMock()
         mock_qs.order_by.return_value.annotate.return_value.values_list.return_value = [
             "Smith John",
@@ -575,6 +668,7 @@ class GetPubDoiTest(TestCase):
     """Tests for get_pub_doi."""
 
     def test_doi(self):
+        """Test doi."""
         mock_pub_dbxref = MagicMock()
         mock_pub_dbxref.dbxref.accession = "10.1234/test"
 
@@ -591,8 +685,12 @@ class MachadoPubMethodsTest(TestCase):
     """Tests for the machado_pub_methods decorator."""
 
     def test_decorator_adds_methods(self):
+        """Test decorator adds methods."""
+
         @machado_pub_methods()
         class DummyPub:
+            """Test suite for DummyPub."""
+
             pass
 
         self.assertTrue(hasattr(DummyPub, "get_authors"))

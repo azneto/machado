@@ -61,7 +61,8 @@ class BiomaterialTest(TestCase):
         self.assertEqual(True, Db.objects.filter(name=test_namedb).exists())
         test_db = Db.objects.get(name=test_namedb)
         self.assertEqual(
-            True, Dbxref.objects.filter(db=test_db, accession=test_acc).exists()
+            True,
+            Dbxref.objects.filter(db=test_db, accession=test_acc).exists(),
         )
         test_dbxref = Dbxref.objects.get(db=test_db, accession=test_acc)
         self.assertEqual(
@@ -94,7 +95,9 @@ class BiomaterialTest(TestCase):
                 biomaterial=test_biomaterial, treatment=test_treatment
             ).exists(),
         )
-        call_command("remove_file", "--name=test_filename.txt", "--verbosity=0")
+        call_command(
+            "remove_file", "--name=test_filename.txt", "--verbosity=0"
+        )
         self.assertEqual(
             False,
             Biomaterial.objects.filter(

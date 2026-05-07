@@ -19,14 +19,21 @@ from machado.models import (
 
 
 class OntologyLoaderTest(TestCase):
+    """Test suite for OntologyLoader."""
+
     def setUp(self):
-        self.loader = OntologyLoader(cv_name="sequence", cv_definition="SO definition")
+        """Set up test context."""
+        self.loader = OntologyLoader(
+            cv_name="sequence", cv_definition="SO definition"
+        )
 
     def test_init_already_exists(self):
+        """Test init already exists."""
         with self.assertRaisesRegex(ImportingError, "already registered"):
             OntologyLoader(cv_name="sequence")
 
     def test_store_type_def(self):
+        """Test store type def."""
         typedef = {
             "id": "SO:part_of",
             "name": "part of",
@@ -80,12 +87,14 @@ class OntologyLoaderTest(TestCase):
         )
 
     def test_store_type_def_no_prefix(self):
+        """Test store type def no prefix."""
         typedef = {"id": "rel1"}
         self.loader.store_type_def(typedef)
         cvterm = Cvterm.objects.get(name="rel1")
         self.assertEqual(cvterm.dbxref.db.name, "_global")
 
     def test_store_term(self):
+        """Test store term."""
         data = {
             "name": "gene",
             "namespace": "sequence",
@@ -126,10 +135,13 @@ class OntologyLoaderTest(TestCase):
 
         # Check synonym
         self.assertTrue(
-            Cvtermsynonym.objects.filter(cvterm=cvterm, synonym="syn1").exists()
+            Cvtermsynonym.objects.filter(
+                cvterm=cvterm, synonym="syn1"
+            ).exists()
         )
 
     def test_store_relationship(self):
+        """Test store relationship."""
         # Create terms first
         self.loader.store_term("SO:0001", {"name": "gene"})
         self.loader.store_term("SO:0002", {"name": "coding_gene"})
@@ -158,6 +170,7 @@ class OntologyLoaderTest(TestCase):
         )
 
     def test_process_cvterm_go_synonym(self):
+        """Test process cvterm go synonym."""
         cvterm = Cvterm.objects.get(name="is_a")  # reuse any
         self.loader.process_cvterm_go_synonym(
             cvterm, '"assembly" [GOC:123]', "EXACT_synonym"
@@ -169,6 +182,7 @@ class OntologyLoaderTest(TestCase):
         )
 
     def test_process_cvterm_def_edge_cases(self):
+        """Test process cvterm def edge cases."""
         cvterm = Cvterm.objects.get(name="is_a")
         # No dbxrefs
         self.loader.process_cvterm_def(cvterm, "Simple definition")
@@ -177,5 +191,7 @@ class OntologyLoaderTest(TestCase):
         # URL dbxref
         self.loader.process_cvterm_def(cvterm, '"Def" [http://example.com]')
         self.assertTrue(
-            CvtermDbxref.objects.filter(cvterm=cvterm, dbxref__db__name="URL").exists()
+            CvtermDbxref.objects.filter(
+                cvterm=cvterm, dbxref__db__name="URL"
+            ).exists()
         )

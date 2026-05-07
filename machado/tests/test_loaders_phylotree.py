@@ -91,7 +91,9 @@ class PhylotreeTest(TestCase):
             PhylonodeOrganism_phylonode_Phylonode__organism=test_organism1
         )
 
-        test_organism2 = Organism.objects.get(genus="Ilex", species="paraguariensis")
+        test_organism2 = Organism.objects.get(
+            genus="Ilex", species="paraguariensis"
+        )
         test_phylonode2 = Phylonode.objects.get(
             PhylonodeOrganism_phylonode_Phylonode__organism=test_organism2
         )
@@ -103,5 +105,9 @@ class PhylotreeTest(TestCase):
         )
         # test remove_phylotree
         self.assertTrue(Phylotree.objects.filter(name="testTaxonomy").exists())
-        call_command("remove_phylotree", "--name=testTaxonomy", "--verbosity=0")
-        self.assertFalse(Phylotree.objects.filter(name="testTaxonomy").exists())
+        call_command(
+            "remove_phylotree", "--name=testTaxonomy", "--verbosity=0"
+        )
+        self.assertFalse(
+            Phylotree.objects.filter(name="testTaxonomy").exists()
+        )

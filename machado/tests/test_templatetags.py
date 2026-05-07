@@ -25,7 +25,9 @@ class MachadoExtrasTest(TestCase):
         result = machado_extras.param_replace(context, page=2)
         self.assertEqual("q=&page=2", result)
 
-        request = self.factory.get("/find/?q=&selected_facets=so_term_exact:gene")
+        request = self.factory.get(
+            "/find/?q=&selected_facets=so_term_exact:gene"
+        )
         context = {"request": request}
         result = machado_extras.param_replace(
             context, selected_facets="organism:Arabidopsis thaliana"

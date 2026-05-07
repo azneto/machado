@@ -23,7 +23,10 @@ from machado.models import (
 
 
 class SimilarityLoaderTest(TestCase):
+    """Test suite for SimilarityLoader."""
+
     def setUp(self):
+        """Set up test context."""
         self.db_internal = Db.objects.create(name="internal")
         self.dbxref_loc = Dbxref.objects.create(
             db=self.db_internal, accession="located_in"
@@ -60,10 +63,16 @@ class SimilarityLoaderTest(TestCase):
             is_relationshiptype=1,
         )
 
-        self.org_q = Organism.objects.create(genus="GenusQ", species="speciesQ")
-        self.org_s = Organism.objects.create(genus="GenusS", species="speciesS")
+        self.org_q = Organism.objects.create(
+            genus="GenusQ", species="speciesQ"
+        )
+        self.org_s = Organism.objects.create(
+            genus="GenusS", species="speciesS"
+        )
 
-        self.dbxref_mrna = Dbxref.objects.create(db=self.db_internal, accession="mRNA")
+        self.dbxref_mrna = Dbxref.objects.create(
+            db=self.db_internal, accession="mRNA"
+        )
         self.type_mrna = Cvterm.objects.create(
             name="mRNA",
             cv=self.cv_seq,
@@ -73,6 +82,7 @@ class SimilarityLoaderTest(TestCase):
         )
 
     def test_init_success(self):
+        """Test init success."""
         loader = SimilarityLoader(
             filename="test.xml",
             program="blast",
@@ -86,6 +96,7 @@ class SimilarityLoaderTest(TestCase):
         self.assertIsNotNone(loader.analysis)
 
     def test_retrieve_id_from_description(self):
+        """Test retrieve id from description."""
         loader = SimilarityLoader(
             filename="test.xml",
             program="blast",
@@ -97,11 +108,15 @@ class SimilarityLoaderTest(TestCase):
             input_format="blast-xml",
         )
         self.assertEqual(
-            loader.retrieve_id_from_description("some data id=FEAT1 more data"), "FEAT1"
+            loader.retrieve_id_from_description(
+                "some data id=FEAT1 more data"
+            ),
+            "FEAT1",
         )
         self.assertIsNone(loader.retrieve_id_from_description("no id here"))
 
     def test_store_match_part(self):
+        """Test store match part."""
         loader = SimilarityLoader(
             filename="test.xml",
             program="blast",
@@ -149,6 +164,7 @@ class SimilarityLoaderTest(TestCase):
         )
 
     def test_store_feature_relationship(self):
+        """Test store feature relationship."""
         loader = SimilarityLoader(
             filename="test.xml",
             program="blast",
@@ -187,6 +203,7 @@ class SimilarityLoaderTest(TestCase):
         )
 
     def test_store_bio_searchio_query_result(self):
+        """Test store bio searchio query result."""
         loader = SimilarityLoader(
             filename="test.xml",
             program="blast",
@@ -241,6 +258,7 @@ class SimilarityLoaderTest(TestCase):
         )
 
     def test_retrieve_query_from_hsp_description_fallback(self):
+        """Test retrieve query from hsp description fallback."""
         loader = SimilarityLoader(
             filename="test.xml",
             program="blast",
@@ -264,9 +282,12 @@ class SimilarityLoaderTest(TestCase):
         hsp_mock.query_id = "NONEXISTENT"
         hsp_mock.query_description = "data id=FEAT_DESC"
 
-        self.assertEqual(loader.retrieve_query_from_hsp(hsp_mock), q_feat.feature_id)
+        self.assertEqual(
+            loader.retrieve_query_from_hsp(hsp_mock), q_feat.feature_id
+        )
 
     def test_interproscan_mRNA_annotation(self):
+        """Test interproscan mRNA annotation."""
         loader = SimilarityLoader(
             filename="test.xml",
             program="blast",
@@ -278,7 +299,9 @@ class SimilarityLoaderTest(TestCase):
             input_format="interproscan-xml",
         )
 
-        dbxref_poly = Dbxref.objects.create(db=self.db_internal, accession="poly")
+        dbxref_poly = Dbxref.objects.create(
+            db=self.db_internal, accession="poly"
+        )
         type_poly = Cvterm.objects.create(
             name="polypeptide",
             cv=self.cv_seq,

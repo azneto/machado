@@ -29,7 +29,9 @@ class FeatureTest(TestCase):
 
     def test_process_attributes(self):
         """Tests - get attributes."""
-        test_organism = Organism.objects.create(genus="Mus", species="musculus")
+        test_organism = Organism.objects.create(
+            genus="Mus", species="musculus"
+        )
         # creating test GO term
         test_db = Db.objects.create(name="GO")
         test_dbxref = Dbxref.objects.create(accession="12345", db=test_db)
@@ -81,7 +83,9 @@ class FeatureTest(TestCase):
         )
         # creating exact term
         test_db_global = Db.objects.create(name="_global")
-        test_dbxref = Dbxref.objects.create(accession="exact", db=test_db_global)
+        test_dbxref = Dbxref.objects.create(
+            accession="exact", db=test_db_global
+        )
         test_cv = Cv.objects.create(name="synonym_type")
         Cvterm.objects.create(
             name="exact",
@@ -102,7 +106,9 @@ class FeatureTest(TestCase):
         )
 
         # new FeatureLoader
-        FeatureLoader(filename="file.name", source="GFF_source", organism=test_organism)
+        FeatureLoader(
+            filename="file.name", source="GFF_source", organism=test_organism
+        )
         # running get_attributes
         test_attrs_file = FeatureAttributesLoader(filecontent="genome")
         test_attrs = test_attrs_file.get_attributes(
@@ -117,7 +123,9 @@ class FeatureTest(TestCase):
         # creating feature_property cvterm
         cv_feature_property = Cv.objects.get(name="feature_property")
         # asserting note
-        test_prop_cvterm = Cvterm.objects.get(name="note", cv=cv_feature_property)
+        test_prop_cvterm = Cvterm.objects.get(
+            name="note", cv=cv_feature_property
+        )
         test_prop = Featureprop.objects.get(
             feature=test_feature, type_id=test_prop_cvterm.cvterm_id, rank=0
         )
@@ -131,7 +139,9 @@ class FeatureTest(TestCase):
             feature=test_feature
         ).values_list("dbxref_id", flat=True)
         test_db = Db.objects.get(name="GI")
-        test_dbxref = Dbxref.objects.get(dbxref_id__in=test_dbxref_ids, db=test_db)
+        test_dbxref = Dbxref.objects.get(
+            dbxref_id__in=test_dbxref_ids, db=test_db
+        )
         self.assertEqual("12345", test_dbxref.accession)
         # asserting alias
         test_synonym = FeatureSynonym.objects.select_related("synonym").get(

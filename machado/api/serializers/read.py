@@ -510,6 +510,7 @@ class HistoryListSerializer(serializers.ModelSerializer):
     exit_code = serializers.IntegerField()
 
     def get_params(self, obj):
+        """Extract and format command parameters."""
         params_str = obj.params or ""
 
         fields = [

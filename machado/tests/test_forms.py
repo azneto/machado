@@ -1,3 +1,5 @@
+"""Module tests."""
+
 from django.test import TestCase
 from django.http import QueryDict
 from unittest.mock import MagicMock
@@ -6,9 +8,13 @@ from machado.forms import FeatureSearchForm
 
 
 class FeatureSearchFormTest(TestCase):
+    """Test suite for FeatureSearchForm."""
+
     def test_search_invalid(self):
+        """Test search invalid."""
         form = FeatureSearchForm(data={})
-        # If no 'q' is provided, it might be invalid depending on the form definition.
+        # If no 'q' is provided, it might be invalid depending on the form
+        # definition.
         # Wait, FacetedSearchForm requires 'q'?
         # Actually we can just mock is_valid
         form.is_valid = MagicMock(return_value=False)
@@ -19,6 +25,7 @@ class FeatureSearchFormTest(TestCase):
         self.assertEqual(result, "no_query")
 
     def test_search_empty_q(self):
+        """Test search empty q."""
         mock_sqs = MagicMock()
         data = QueryDict(mutable=True)
         data.update({"q": ""})
@@ -31,6 +38,7 @@ class FeatureSearchFormTest(TestCase):
         self.assertEqual(result, mock_sqs)
 
     def test_search_with_q(self):
+        """Test search with q."""
         mock_sqs = MagicMock()
         mock_sqs.filter.return_value = "filtered_sqs"
 
@@ -49,6 +57,7 @@ class FeatureSearchFormTest(TestCase):
         self.assertIsNotNone(filter_call_args)
 
     def test_search_with_facets(self):
+        """Test search with facets."""
         mock_sqs = MagicMock()
         mock_sqs.filter.return_value = mock_sqs
 
@@ -67,5 +76,6 @@ class FeatureSearchFormTest(TestCase):
         result = form.search()
         self.assertIsNotNone(result)
 
-        # sqs.filter should have been called for both 'otherfacet' and 'analyses'
+        # sqs.filter should have been called for both 'otherfacet' and
+        # 'analyses'
         self.assertTrue(mock_sqs.filter.called)

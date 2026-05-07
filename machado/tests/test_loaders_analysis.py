@@ -27,7 +27,10 @@ from machado.models import Contact, Arraydesign, Protocol
 
 
 class AnalysisLoaderTest(TestCase):
+    """Test suite for AnalysisLoader."""
+
     def setUp(self):
+        """Set up test context."""
         self.db_internal = Db.objects.create(name="internal")
         self.dbxref_loc = Dbxref.objects.create(
             db=self.db_internal, accession="located_in"
@@ -45,7 +48,9 @@ class AnalysisLoaderTest(TestCase):
         # Dependencies for Assay
         self.contact = Contact.objects.create(name="test contact")
         self.db_seq = Cv.objects.create(name="sequence")
-        self.dbxref_gene = Dbxref.objects.create(db=self.db_internal, accession="gene")
+        self.dbxref_gene = Dbxref.objects.create(
+            db=self.db_internal, accession="gene"
+        )
         self.type_gene = Cvterm.objects.create(
             name="gene",
             cv=self.db_seq,
@@ -55,14 +60,18 @@ class AnalysisLoaderTest(TestCase):
         )
 
         self.arraydesign = Arraydesign.objects.create(
-            manufacturer=self.contact, platformtype=self.type_gene, name="test array"
+            manufacturer=self.contact,
+            platformtype=self.type_gene,
+            name="test array",
         )
         self.protocol = Protocol.objects.create(
             type=self.type_gene, name="test protocol"
         )
 
         # mRNA type for Analysisfeature
-        self.dbxref_mrna = Dbxref.objects.create(db=self.db_internal, accession="mRNA")
+        self.dbxref_mrna = Dbxref.objects.create(
+            db=self.db_internal, accession="mRNA"
+        )
         self.type_mrna = Cvterm.objects.create(
             name="mRNA",
             cv=self.db_seq,
@@ -72,6 +81,7 @@ class AnalysisLoaderTest(TestCase):
         )
 
     def create_assay(self, **kwargs):
+        """create_assay."""
         defaults = {
             "arraydesign": self.arraydesign,
             "protocol": self.protocol,
@@ -81,6 +91,7 @@ class AnalysisLoaderTest(TestCase):
         return Assay.objects.create(**defaults)
 
     def test_store_analysis_success(self):
+        """Test store analysis success."""
         analysis = self.loader.store_analysis(
             program="blast",
             sourcename="test.xml",
@@ -91,10 +102,13 @@ class AnalysisLoaderTest(TestCase):
         )
         self.assertEqual(analysis.name, "Test Blast")
         self.assertTrue(
-            Analysisprop.objects.filter(analysis=analysis, value="test.xml").exists()
+            Analysisprop.objects.filter(
+                analysis=analysis, value="test.xml"
+            ).exists()
         )
 
     def test_store_analysis_with_date(self):
+        """Test store analysis with date."""
         analysis = self.loader.store_analysis(
             program="blast",
             sourcename="test.xml",
@@ -106,6 +120,7 @@ class AnalysisLoaderTest(TestCase):
         self.assertEqual(analysis.timeexecuted.day, 16)
 
     def test_store_quantification(self):
+        """Test store quantification."""
         db_sra = Db.objects.create(name="SRA")
         dbxref_sra = Dbxref.objects.create(db=db_sra, accession="SRR123")
         assay = self.create_assay(dbxref=dbxref_sra, name="Assay 1")
@@ -118,10 +133,15 @@ class AnalysisLoaderTest(TestCase):
 
         self.loader.store_quantification(analysis, "SRR123")
 
-        self.assertTrue(Acquisition.objects.filter(assay=assay, name="SRR123").exists())
-        self.assertTrue(Quantification.objects.filter(analysis=analysis).exists())
+        self.assertTrue(
+            Acquisition.objects.filter(assay=assay, name="SRR123").exists()
+        )
+        self.assertTrue(
+            Quantification.objects.filter(analysis=analysis).exists()
+        )
 
     def test_store_quantification_by_name(self):
+        """Test store quantification by name."""
         assay = self.create_assay(name="AssayName")
         analysis = Analysis.objects.create(
             program="p",
@@ -130,9 +150,12 @@ class AnalysisLoaderTest(TestCase):
             timeexecuted="2023-01-01T00:00:00Z",
         )
         self.loader.store_quantification(analysis, "AssayName")
-        self.assertEqual(Acquisition.objects.get(name="AssayName").assay, assay)
+        self.assertEqual(
+            Acquisition.objects.get(name="AssayName").assay, assay
+        )
 
     def test_store_analysisfeature(self):
+        """Test store analysisfeature."""
         org = Organism.objects.create(genus="G", species="s")
         feature = Feature.objects.create(
             organism=org,
@@ -150,7 +173,9 @@ class AnalysisLoaderTest(TestCase):
             timeexecuted="2023-01-01T00:00:00Z",
         )
 
-        self.loader.store_analysisfeature(analysis, feature, org, rawscore=100.0)
+        self.loader.store_analysisfeature(
+            analysis, feature, org, rawscore=100.0
+        )
 
         self.assertTrue(
             Analysisfeature.objects.filter(
@@ -159,6 +184,7 @@ class AnalysisLoaderTest(TestCase):
         )
 
     def test_store_analysisfeature_by_name(self):
+        """Test store analysisfeature by name."""
         org = Organism.objects.create(genus="Genus", species="species")
         feature = Feature.objects.create(
             organism=org,
@@ -180,6 +206,8 @@ class AnalysisLoaderTest(TestCase):
             analysis, "feat2", "Genus species", identity=95.0
         )
         self.assertEqual(
-            Analysisfeature.objects.get(analysis=analysis, identity=95.0).feature,
+            Analysisfeature.objects.get(
+                analysis=analysis, identity=95.0
+            ).feature,
             feature,
         )

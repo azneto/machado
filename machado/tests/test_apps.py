@@ -1,3 +1,5 @@
+"""Module tests."""
+
 from django.test import TestCase
 from django.apps import apps
 from unittest.mock import patch
@@ -6,7 +8,10 @@ import warnings
 
 
 class AppsTest(TestCase):
+    """Test suite for Apps."""
+
     def test_apps_ready_success(self):
+        """Test apps ready success."""
         # Already executed during django setup, but we can call it again
         config = apps.get_app_config("machado")
         with patch("machado.settings.patch_all") as mock_patch:
@@ -14,6 +19,7 @@ class AppsTest(TestCase):
             mock_patch.assert_called_once()
 
     def test_apps_ready_programming_error_cvterm(self):
+        """Test apps ready programming error cvterm."""
         config = apps.get_app_config("machado")
         with patch(
             "machado.settings.patch_all",
@@ -24,10 +30,12 @@ class AppsTest(TestCase):
                 config.ready()
                 self.assertEqual(len(w), 1)
                 self.assertIn(
-                    "You need to run: 'python manage.py migrate'", str(w[-1].message)
+                    "You need to run: 'python manage.py migrate'",
+                    str(w[-1].message),
                 )
 
     def test_apps_ready_programming_error_other(self):
+        """Test apps ready programming error other."""
         config = apps.get_app_config("machado")
         with patch(
             "machado.settings.patch_all",
