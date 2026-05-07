@@ -1,0 +1,203 @@
+Creating test database for alias 'default'...
+.F.F.F....E....E.E.....FFF.
+======================================================================
+ERROR: test_list_not_found (machado.tests.test_api_read.FeatureOrthologViewSetTest.test_list_not_found)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/unittest/mock.py", line 1378, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/tests/test_api_read.py", line 269, in test_list_not_found
+    self.assertEqual(response.data['ortholog_group'], None)
+                     ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+KeyError: 'ortholog_group'
+
+======================================================================
+ERROR: test_list (machado.tests.test_api_read.FeatureSimilarityViewSetTest.test_list)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/unittest/mock.py", line 1378, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/tests/test_api_read.py", line 409, in test_list
+    response = view(request, feature_id=1)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/utils/decorators.py", line 48, in _wrapper
+    return bound_method(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/api/views/read.py", line 996, in dispatch
+    return super(FeatureSimilarityViewSet, self).dispatch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/utils/decorators.py", line 48, in _wrapper
+    return bound_method(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/api/views/read.py", line 943, in list
+    queryset = self.get_queryset()
+               ^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/api/views/read.py", line 971, in get_queryset
+    Featureloc.objects.filter(feature_id=match_part_id).exclude(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'exclude'
+
+======================================================================
+ERROR: test_list (machado.tests.test_api_read.JBrowseFeatureViewSetTest.test_list)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/unittest/mock.py", line 1378, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/tests/test_api_read.py", line 143, in test_list
+    response = view(request, refseq='refseq1')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/utils/decorators.py", line 48, in _wrapper
+    return bound_method(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/api/views/read.py", line 290, in dispatch
+    return super(JBrowseFeatureViewSet, self).dispatch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/utils/decorators.py", line 48, in _wrapper
+    return bound_method(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/api/views/read.py", line 236, in list
+    context = self.get_serializer_context()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/api/views/read.py", line 248, in get_serializer_context
+    refseq_feature_obj = Feature.objects.filter(
+                         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/unittest/mock.py", line 1124, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/unittest/mock.py", line 1128, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/unittest/mock.py", line 1185, in _execute_mock_call
+    result = next(effect)
+             ^^^^^^^^^^^^
+StopIteration
+
+======================================================================
+FAIL: test_list_no_query (machado.tests.test_api_read.AutocompleteViewSetTest.test_list_no_query)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/tests/test_api_read.py", line 170, in test_list_no_query
+    self.assertIsNone(response.data)
+AssertionError: [] is not None
+
+======================================================================
+FAIL: test_list_not_found (machado.tests.test_api_read.FeatureExpressionViewSetTest.test_list_not_found)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/unittest/mock.py", line 1378, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/tests/test_api_read.py", line 309, in test_list_not_found
+    self.assertIsNone(response.data)
+AssertionError: [] is not None
+
+======================================================================
+FAIL: test_list_not_found (machado.tests.test_api_read.FeatureIDViewSetTest.test_list_not_found)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/unittest/mock.py", line 1378, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/tests/test_api_read.py", line 241, in test_list_not_found
+    self.assertIsNone(response.data)
+AssertionError: {'feature_id': None} is not None
+
+======================================================================
+FAIL: test_list_multiple (machado.tests.test_api_read.OrganismIDViewSetTest.test_list_multiple)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/unittest/mock.py", line 1378, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/tests/test_api_read.py", line 205, in test_list_multiple
+    self.assertIsNone(response.data)
+AssertionError: {'organism_id': None} is not None
+
+======================================================================
+FAIL: test_list_not_found (machado.tests.test_api_read.OrganismIDViewSetTest.test_list_not_found)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/unittest/mock.py", line 1378, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/tests/test_api_read.py", line 196, in test_list_not_found
+    self.assertIsNone(response.data)
+AssertionError: {'organism_id': None} is not None
+
+======================================================================
+FAIL: test_list_success (machado.tests.test_api_read.OrganismIDViewSetTest.test_list_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/adhemar/.pyenv/versions/3.11.10/lib/python3.11/unittest/mock.py", line 1378, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/www/YOURPROJECT/src/azneto-machado/machado/tests/test_api_read.py", line 187, in test_list_success
+    self.assertEqual(response.data['organism_id'], 123)
+AssertionError: 1 != 123
+
+----------------------------------------------------------------------
+Ran 27 tests in 0.198s
+
+FAILED (failures=6, errors=3)
+Destroying test database for alias 'default'...
+Found 27 test(s).
+System check identified no issues (0 silenced).

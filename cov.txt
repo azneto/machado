@@ -11,7 +11,7 @@ machado/api/views/__init__.py                0      0      0      0   100%
 machado/api/views/load.py                  342    342     64      0     0%   9-1242
 machado/api/views/read.py                  514    514     66      0     0%   9-1035
 machado/apps.py                             14      0      2      0   100%
-machado/decorators.py                      155    109     40      0    24%   17-35, 40-45, 50-55, 60-65, 70-83, 88-104, 109-121, 126-135, 140-143, 148-153, 158-163, 168-208, 213-233, 238, 249-291, 320, 329
+machado/decorators.py                      155      0     40      2    99%   230->229, 261->250
 machado/forms.py                            33      0     18      0   100%
 machado/loaders/__init__.py                  0      0      0      0   100%
 machado/loaders/analysis.py                 65     22      6      1    68%   51-52, 71-74, 85-86, 98-102, 106-107, 110-111, 128-131, 149-150
@@ -31,7 +31,7 @@ machado/loaders/similarity.py              109     16     20      4    84%   78,
 machado/loaders/treatment.py                17      2      0      0    88%   49-50
 machado/models.py                         2023      4      0      0    99%   4346-4349
 machado/scripts/__init__.py                  0      0      0      0   100%
-machado/scripts/startproject.py             49      4     18      4    88%   82-86, 96, 128->132, 148
+machado/scripts/startproject.py             57     10     30      9    76%   90-95, 105, 112, 118, 125, 137, 141->145, 146, 162
 machado/search_indexes.py                  155    155     64      0     0%   9-300
 machado/settings.py                         29      0      4      0   100%
 machado/templatetags/__init__.py             0      0      0      0   100%
@@ -42,4 +42,4 @@ machado/views/common.py                     37      3      8      1    91%   100
 machado/views/feature.py                    26      0      0      0   100%
 machado/views/search.py                     60      0     12      0   100%
 ------------------------------------------------------------------------------------
-TOTAL                                     4906   1479    610     69    67%
+TOTAL                                     4914   1376    622     76    70%
