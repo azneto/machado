@@ -59,3 +59,46 @@ class ProjectTest(TestCase):
                 project_id=test_project1.project_id, value=test_filename
             ).exists(),
         )
+
+    def test_store_project_integrity_error(self):
+        """Tests - store_project IntegrityError."""
+        test_db = Db.objects.create(name="RO")
+        test_dbxref = Dbxref.objects.create(accession="00003", db=test_db)
+        test_cv = Cv.objects.create(name="relationship")
+        Cvterm.objects.create(
+            name="located in",
+            cv=test_cv,
+            dbxref=test_dbxref,
+            is_obsolete=0,
+            is_relationshiptype=0,
+        )
+        test_project_file1 = ProjectLoader()
+        from unittest.mock import patch
+        from django.db.utils import IntegrityError
+        from machado.loaders.exceptions import ImportingError
+        
+        with patch("machado.models.Project.objects.get_or_create", side_effect=IntegrityError):
+            with self.assertRaises(ImportingError):
+                test_project_file1.store_project(name="error_acc", filename="error.txt")
+
+    def test_store_projectprop_integrity_error(self):
+        """Tests - store_projectprop IntegrityError."""
+        test_db = Db.objects.create(name="RO")
+        test_dbxref = Dbxref.objects.create(accession="00004", db=test_db)
+        test_cv = Cv.objects.create(name="relationship")
+        test_cvterm = Cvterm.objects.create(
+            name="located in",
+            cv=test_cv,
+            dbxref=test_dbxref,
+            is_obsolete=0,
+            is_relationshiptype=0,
+        )
+        test_project_file1 = ProjectLoader()
+        project = Project.objects.create(name="test_prop_error")
+        from unittest.mock import patch
+        from django.db.utils import IntegrityError
+        from machado.loaders.exceptions import ImportingError
+        
+        with patch("machado.models.Projectprop.objects.get_or_create", side_effect=IntegrityError):
+            with self.assertRaises(ImportingError):
+                test_project_file1.store_projectprop(project, test_cvterm.cvterm_id, "error.txt")

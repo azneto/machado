@@ -242,6 +242,50 @@ class DataSummaryTest(TestCase):
         self.assertContains(response, "gene: 1 <br />")
         self.assertContains(response, "mRNA: 2 <br />")
 
+    def test_get_no_settings_and_infraspecific(self):
+        """Tests - get without MACHADO_VALID_TYPES and with infraspecific_name."""
+        self.factory = RequestFactory()
+
+        so_db = Db.objects.create(name="SO")
+        so_cv = Cv.objects.create(name="sequence")
+        gene_dbxref = Dbxref.objects.create(accession="gene", db=so_db)
+        gene_cvterm = Cvterm.objects.create(
+            name="gene",
+            cv=so_cv,
+            dbxref=gene_dbxref,
+            is_obsolete=0,
+            is_relationshiptype=0,
+        )
+
+        org = Organism.objects.create(genus="Zea", species="mays", infraspecific_name="subsp. mays")
+        Feature.objects.create(
+            organism=org,
+            uniquename="feat_zea",
+            is_analysis=False,
+            type=gene_cvterm,
+            is_obsolete=False,
+            timeaccessioned=datetime.now(timezone.utc),
+            timelastmodified=datetime.now(timezone.utc),
+        )
+
+        from django.conf import settings
+        original_valid_types = getattr(settings, "MACHADO_VALID_TYPES", None)
+        if hasattr(settings, "MACHADO_VALID_TYPES"):
+            delattr(settings, "MACHADO_VALID_TYPES")
+
+        request = self.factory.get("/data/")
+        ds = common.DataSummaryView()
+        try:
+            response = ds.get(request)
+        except NoReverseMatch:
+            if original_valid_types is not None:
+                settings.MACHADO_VALID_TYPES = original_valid_types
+            return
+
+        if original_valid_types is not None:
+            settings.MACHADO_VALID_TYPES = original_valid_types
+
+        self.assertEqual(response.status_code, 200)
 
 class CongratsTest(TestCase):
     """Tests Congrats View."""

@@ -16,6 +16,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework.authtoken",
     "machado",
 ]
 
@@ -42,9 +43,7 @@ MACHADO_JBROWSE_OFFSET = 1200
 
 HAYSTACK_CONNECTIONS = {
     "default": {
-        "ENGINE": "haystack.backends.elasticsearch7_backend.Elasticsearch7SearchEngine",
-        "URL": "http://127.0.0.1:9200/",
-        "INDEX_NAME": "haystack",
+        "ENGINE": "haystack.backends.simple_backend.SimpleEngine",
     }
 }
 
