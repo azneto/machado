@@ -40,7 +40,7 @@ jobs:
         pip install -e .
     - name: Lint with flake8
       run: |
-        pip install flake8 flake8-black
+        pip install flake8 flake8-black flake8-pyproject
         flake8 machado
     - name: Create project
       run: |
