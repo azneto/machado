@@ -171,8 +171,6 @@ class RelationsOntologyViewSet(viewsets.GenericViewSet):
         """Handle the POST request for loading organism."""
         in_memory_file = request.FILES["file"]
 
-        print(in_memory_file.name)
-
         destination = open(f"/tmp/{in_memory_file.name}", "wt")
         destination.write(in_memory_file.read().decode("ascii", "ignore"))
         destination.close()
@@ -335,8 +333,6 @@ class SequenceOntologyViewSet(viewsets.GenericViewSet):
     def create(self, request):
         """Handle the POST request for loading sequence ontology."""
         in_memory_file = request.FILES["file"]
-
-        print(in_memory_file.name)
 
         destination = open(f"/tmp/{in_memory_file.name}", "wt")
         destination.write(in_memory_file.read().decode("ascii", "ignore"))

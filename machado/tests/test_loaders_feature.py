@@ -312,7 +312,8 @@ class FeatureLoaderTest(TestCase):
             FeatureRelationship.objects.filter(subject=f1, object=f2).exists()
         )
 
-    def test_store_relationship_not_found(self):
+    @patch("builtins.print")
+    def test_store_relationship_not_found(self, mock_print):
         """Test store relationship not found."""
         loader = FeatureLoader("GFF_REL_NF", "test.gff", self.org)
         self.ensure_cvterm("part_of", self.cv_seq)
