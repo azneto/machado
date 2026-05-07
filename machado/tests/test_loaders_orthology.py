@@ -42,9 +42,7 @@ class OrthologyTest(TestCase):
             is_relationshiptype=1,
         )
 
-        ortho_dbxref = Dbxref.objects.create(
-            accession="ORTHOMCL_SOURCE", db=fo_db
-        )
+        ortho_dbxref = Dbxref.objects.create(accession="ORTHOMCL_SOURCE", db=fo_db)
         term = Cvterm.objects.create(
             name="orthologous group",
             cv=fo_cv,

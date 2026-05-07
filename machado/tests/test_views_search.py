@@ -32,9 +32,7 @@ class SearchViewsTest(TestCase):
         self.assertTrue(mock_qs.facet.called)
 
     @patch("machado.views.search.FacetedSearchView.get_queryset")
-    def test_feature_search_view_get_queryset_defaults(
-        self, mock_super_get_qs
-    ):
+    def test_feature_search_view_get_queryset_defaults(self, mock_super_get_qs):
         """Test get_queryset of FeatureSearchView with default values."""
         mock_qs = MagicMock()
         mock_sqs_facets = MagicMock()
@@ -52,9 +50,7 @@ class SearchViewsTest(TestCase):
         self.assertTrue(mock_qs.facet.called)
 
     @patch("machado.views.search.FacetedSearchView.get_context_data")
-    def test_feature_search_view_get_context_data(
-        self, mock_super_get_context
-    ):
+    def test_feature_search_view_get_context_data(self, mock_super_get_context):
         """Test context data preparation in FeatureSearchView."""
         mock_super_get_context.return_value = {}
 
@@ -70,9 +66,7 @@ class SearchViewsTest(TestCase):
         self.assertIn("other", context["selected_facets_fields"])
 
     @patch("machado.views.search.FacetedSearchView.get_context_data")
-    def test_feature_search_export_view_get_context_data(
-        self, mock_super_get_context
-    ):
+    def test_feature_search_export_view_get_context_data(self, mock_super_get_context):
         """Test context data preparation in FeatureSearchExportView."""
         mock_super_get_context.return_value = {}
 

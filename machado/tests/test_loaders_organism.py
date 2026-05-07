@@ -89,9 +89,7 @@ class OrganismLoaderTest(TestCase):
 
         self.loader.store_organism_publication("Genus species", "10.1234/test")
 
-        self.assertTrue(
-            OrganismPub.objects.filter(organism=org, pub=pub).exists()
-        )
+        self.assertTrue(OrganismPub.objects.filter(organism=org, pub=pub).exists())
 
     def test_store_organism_publication_not_found(self):
         """Test store organism publication not found."""

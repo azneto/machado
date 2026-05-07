@@ -98,13 +98,9 @@ class FieldsValidatorTest(TestCase):
 
     def test_nullfields_fail(self):
         """Test nullfields fail."""
-        with self.assertRaisesRegex(
-            ImportingError, "Found null or empty field"
-        ):
+        with self.assertRaisesRegex(ImportingError, "Found null or empty field"):
             self.validator.validate(2, ["f1", ""])
-        with self.assertRaisesRegex(
-            ImportingError, "Found null or empty field"
-        ):
+        with self.assertRaisesRegex(ImportingError, "Found null or empty field"):
             self.validator.validate(2, ["f1", None])
 
 
@@ -113,9 +109,7 @@ class UtilsTest(TestCase):
 
     def test_get_num_lines(self):
         """Test get num lines."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".txt", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("line1\n#comment\nline2\n")
             temp_name = f.name
         try:
@@ -177,9 +171,7 @@ class FeatureUtilsTest(TestCase):
     def setUp(self):
         """Set up test context."""
         self.db = Db.objects.create(name="test_db")
-        self.dbxref = Dbxref.objects.create(
-            db=self.db, accession="acc1", version="1"
-        )
+        self.dbxref = Dbxref.objects.create(db=self.db, accession="acc1", version="1")
         self.cv_seq = Cv.objects.create(name="sequence")
         self.type_gene = Cvterm.objects.create(
             name="gene",
@@ -225,9 +217,7 @@ class FeatureUtilsTest(TestCase):
 
     def test_retrieve_feature_id_featuredbxref(self):
         """Test retrieve feature id featuredbxref."""
-        dbxref2 = Dbxref.objects.create(
-            db=self.db, accession="acc2", version="1"
-        )
+        dbxref2 = Dbxref.objects.create(db=self.db, accession="acc2", version="1")
         FeatureDbxref.objects.create(
             feature=self.feature, dbxref=dbxref2, is_current=True
         )
@@ -261,9 +251,7 @@ class CvtermUtilsTest(TestCase):
     def setUp(self):
         """Set up test context."""
         self.db = Db.objects.create(name="test_db")
-        self.dbxref = Dbxref.objects.create(
-            db=self.db, accession="acc1", version="1"
-        )
+        self.dbxref = Dbxref.objects.create(db=self.db, accession="acc1", version="1")
         self.cv = Cv.objects.create(name="test_cv")
         self.term = Cvterm.objects.create(
             name="term1",
@@ -286,7 +274,5 @@ class CvtermUtilsTest(TestCase):
 
     def test_retrieve_cvterm_fail(self):
         """Test retrieve cvterm fail."""
-        with self.assertRaisesRegex(
-            ImportingError, "is not a test_cv ontology term"
-        ):
+        with self.assertRaisesRegex(ImportingError, "is not a test_cv ontology term"):
             retrieve_cvterm("test_cv", "unknown")

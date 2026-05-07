@@ -69,9 +69,7 @@ class FeatureTest(TestCase):
 
         so_db = Db.objects.create(name="SO")
         so_cv = Cv.objects.create(name="sequence")
-        chromosome_dbxref = Dbxref.objects.create(
-            accession="chromosome", db=so_db
-        )
+        chromosome_dbxref = Dbxref.objects.create(accession="chromosome", db=so_db)
         chromosome_cvterm = Cvterm.objects.create(
             name="chromosome",
             cv=so_cv,
@@ -103,9 +101,7 @@ class FeatureTest(TestCase):
             is_obsolete=0,
             is_relationshiptype=0,
         )
-        polypeptide_dbxref = Dbxref.objects.create(
-            accession="polypeptide", db=so_db
-        )
+        polypeptide_dbxref = Dbxref.objects.create(accession="polypeptide", db=so_db)
         polypeptide_cvterm = Cvterm.objects.create(
             name="polypeptide",
             cv=so_cv,
@@ -123,9 +119,7 @@ class FeatureTest(TestCase):
             is_obsolete=0,
             is_relationshiptype=0,
         )
-        match_part_dbxref = Dbxref.objects.create(
-            accession="match_part", db=so_db
-        )
+        match_part_dbxref = Dbxref.objects.create(accession="match_part", db=so_db)
         match_part_cvterm = Cvterm.objects.create(
             name="match_part",
             cv=so_cv,
@@ -153,9 +147,7 @@ class FeatureTest(TestCase):
             is_relationshiptype=0,
         )
 
-        self.organism1 = Organism.objects.create(
-            genus="Mus", species="musculus"
-        )
+        self.organism1 = Organism.objects.create(genus="Mus", species="musculus")
         multispecies_organism, created = Organism.objects.get_or_create(
             genus="multispecies", species="multispecies"
         )
@@ -267,9 +259,7 @@ class FeatureTest(TestCase):
         )
 
         mRNA_feat1_db = Db.objects.create(name="GI")
-        mRNA_feat1_dbxref = Dbxref.objects.create(
-            accession="12345", db=mRNA_feat1_db
-        )
+        mRNA_feat1_dbxref = Dbxref.objects.create(accession="12345", db=mRNA_feat1_db)
         FeatureDbxref.objects.create(
             feature=mRNA_feat1, dbxref=mRNA_feat1_dbxref, is_current=True
         )
@@ -360,9 +350,7 @@ class FeatureTest(TestCase):
     def test_get(self):
         """Tests - get."""
         f = Feature.objects.get(uniquename="feat1", type__name="mRNA")
-        request = self.factory.get(
-            "/feature/?feature_id={}".format(f.feature_id)
-        )
+        request = self.factory.get("/feature/?feature_id={}".format(f.feature_id))
         fv = feature.FeatureView()
 
         try:
@@ -372,9 +360,7 @@ class FeatureTest(TestCase):
             pass
 
         f = Feature.objects.get(uniquename="tfeat1", type__name="tRNA")
-        request = self.factory.get(
-            "/feature/?feature_id={}".format(f.feature_id)
-        )
+        request = self.factory.get("/feature/?feature_id={}".format(f.feature_id))
         fv = feature.FeatureView()
 
         try:

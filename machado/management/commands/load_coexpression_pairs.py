@@ -62,7 +62,7 @@ The feature pairs from columns 1 and 2 need to be loaded previously."""
         cpu: int = 1,
         soterm: str = "mRNA",
         verbosity: int = 0,
-        **options
+        **options,
     ):
         """Execute the main function."""
         history_obj = History()

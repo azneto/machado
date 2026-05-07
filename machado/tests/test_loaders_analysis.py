@@ -48,9 +48,7 @@ class AnalysisLoaderTest(TestCase):
         # Dependencies for Assay
         self.contact = Contact.objects.create(name="test contact")
         self.db_seq = Cv.objects.create(name="sequence")
-        self.dbxref_gene = Dbxref.objects.create(
-            db=self.db_internal, accession="gene"
-        )
+        self.dbxref_gene = Dbxref.objects.create(db=self.db_internal, accession="gene")
         self.type_gene = Cvterm.objects.create(
             name="gene",
             cv=self.db_seq,
@@ -69,9 +67,7 @@ class AnalysisLoaderTest(TestCase):
         )
 
         # mRNA type for Analysisfeature
-        self.dbxref_mrna = Dbxref.objects.create(
-            db=self.db_internal, accession="mRNA"
-        )
+        self.dbxref_mrna = Dbxref.objects.create(db=self.db_internal, accession="mRNA")
         self.type_mrna = Cvterm.objects.create(
             name="mRNA",
             cv=self.db_seq,
@@ -102,9 +98,7 @@ class AnalysisLoaderTest(TestCase):
         )
         self.assertEqual(analysis.name, "Test Blast")
         self.assertTrue(
-            Analysisprop.objects.filter(
-                analysis=analysis, value="test.xml"
-            ).exists()
+            Analysisprop.objects.filter(analysis=analysis, value="test.xml").exists()
         )
 
     def test_store_analysis_with_date(self):
@@ -133,12 +127,8 @@ class AnalysisLoaderTest(TestCase):
 
         self.loader.store_quantification(analysis, "SRR123")
 
-        self.assertTrue(
-            Acquisition.objects.filter(assay=assay, name="SRR123").exists()
-        )
-        self.assertTrue(
-            Quantification.objects.filter(analysis=analysis).exists()
-        )
+        self.assertTrue(Acquisition.objects.filter(assay=assay, name="SRR123").exists())
+        self.assertTrue(Quantification.objects.filter(analysis=analysis).exists())
 
     def test_store_quantification_by_name(self):
         """Test store quantification by name."""
@@ -150,9 +140,7 @@ class AnalysisLoaderTest(TestCase):
             timeexecuted="2023-01-01T00:00:00Z",
         )
         self.loader.store_quantification(analysis, "AssayName")
-        self.assertEqual(
-            Acquisition.objects.get(name="AssayName").assay, assay
-        )
+        self.assertEqual(Acquisition.objects.get(name="AssayName").assay, assay)
 
     def test_store_analysisfeature(self):
         """Test store analysisfeature."""
@@ -173,9 +161,7 @@ class AnalysisLoaderTest(TestCase):
             timeexecuted="2023-01-01T00:00:00Z",
         )
 
-        self.loader.store_analysisfeature(
-            analysis, feature, org, rawscore=100.0
-        )
+        self.loader.store_analysisfeature(analysis, feature, org, rawscore=100.0)
 
         self.assertTrue(
             Analysisfeature.objects.filter(
@@ -206,8 +192,6 @@ class AnalysisLoaderTest(TestCase):
             analysis, "feat2", "Genus species", identity=95.0
         )
         self.assertEqual(
-            Analysisfeature.objects.get(
-                analysis=analysis, identity=95.0
-            ).feature,
+            Analysisfeature.objects.get(analysis=analysis, identity=95.0).feature,
             feature,
         )

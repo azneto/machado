@@ -95,9 +95,7 @@ class BiomaterialTest(TestCase):
                 biomaterial=test_biomaterial, treatment=test_treatment
             ).exists(),
         )
-        call_command(
-            "remove_file", "--name=test_filename.txt", "--verbosity=0"
-        )
+        call_command("remove_file", "--name=test_filename.txt", "--verbosity=0")
         self.assertEqual(
             False,
             Biomaterial.objects.filter(

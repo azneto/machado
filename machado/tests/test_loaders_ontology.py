@@ -23,9 +23,7 @@ class OntologyLoaderTest(TestCase):
 
     def setUp(self):
         """Set up test context."""
-        self.loader = OntologyLoader(
-            cv_name="sequence", cv_definition="SO definition"
-        )
+        self.loader = OntologyLoader(cv_name="sequence", cv_definition="SO definition")
 
     def test_init_already_exists(self):
         """Test init already exists."""
@@ -135,9 +133,7 @@ class OntologyLoaderTest(TestCase):
 
         # Check synonym
         self.assertTrue(
-            Cvtermsynonym.objects.filter(
-                cvterm=cvterm, synonym="syn1"
-            ).exists()
+            Cvtermsynonym.objects.filter(cvterm=cvterm, synonym="syn1").exists()
         )
 
     def test_store_relationship(self):
@@ -191,7 +187,5 @@ class OntologyLoaderTest(TestCase):
         # URL dbxref
         self.loader.process_cvterm_def(cvterm, '"Def" [http://example.com]')
         self.assertTrue(
-            CvtermDbxref.objects.filter(
-                cvterm=cvterm, dbxref__db__name="URL"
-            ).exists()
+            CvtermDbxref.objects.filter(cvterm=cvterm, dbxref__db__name="URL").exists()
         )

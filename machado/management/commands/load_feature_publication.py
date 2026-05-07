@@ -54,7 +54,7 @@ class Command(BaseCommand):
         soterm: str,
         verbosity: int = 1,
         cpu: int = 1,
-        **options
+        **options,
     ):
         """Execute the main function."""
         history_obj = History()

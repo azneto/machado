@@ -66,18 +66,14 @@ class FeatureIndexTest(TestCase):
 
     def test_index_queryset_error(self):
         """Test index queryset error."""
-        with patch(
-            "machado.search_indexes.FeatureIndex.get_model"
-        ) as mock_model:
+        with patch("machado.search_indexes.FeatureIndex.get_model") as mock_model:
             mock_model.side_effect = AttributeError
             with self.assertRaises(AttributeError):
                 self.index.index_queryset()
 
     def test_prepare_organism(self):
         """Test prepare organism."""
-        self.assertEqual(
-            self.index.prepare_organism(self.feature), "Genus species"
-        )
+        self.assertEqual(self.index.prepare_organism(self.feature), "Genus species")
         self.feature.organism.infraspecific_name = "infra"
         self.assertEqual(
             self.index.prepare_organism(self.feature), "Genus species infra"
@@ -98,18 +94,14 @@ class FeatureIndexTest(TestCase):
         result = self.index.prepare_analyses(self.feature)
         self.assertEqual(result, ["blast matches"])
 
-        mock_af_filter.return_value.values_list.return_value.distinct.return_value = (
-            []
-        )
+        mock_af_filter.return_value.values_list.return_value.distinct.return_value = []
         result = self.index.prepare_analyses(self.feature)
         self.assertEqual(result, ["no blast matches"])
 
     @patch("machado.search_indexes.FeatureDbxref.objects.filter")
     @patch("machado.search_indexes.FeatureCvterm.objects.filter")
     @patch("machado.search_indexes.FeatureRelationship.objects.filter")
-    def test_prepare_text(
-        self, mock_fr_filter, mock_fc_filter, mock_fd_filter
-    ):
+    def test_prepare_text(self, mock_fr_filter, mock_fc_filter, mock_fd_filter):
         """Test prepare text."""
         feature = MagicMock()
         feature.uniquename = "test_feat"
@@ -224,27 +216,19 @@ class FeatureIndexTest(TestCase):
         """Test prepare orthology."""
         self.feature.get_orthologous_group = MagicMock(return_value="OG1")
         self.assertTrue(self.index.prepare_orthology(self.feature))
-        self.assertEqual(
-            self.index.prepare_orthologous_group(self.feature), "OG1"
-        )
+        self.assertEqual(self.index.prepare_orthologous_group(self.feature), "OG1")
 
     def test_prepare_coexpression(self):
         """Test prepare coexpression."""
         self.feature.get_coexpression_group = MagicMock(return_value="CG1")
         self.assertTrue(self.index.prepare_coexpression(self.feature))
-        self.assertEqual(
-            self.index.prepare_coexpression_group(self.feature), "CG1"
-        )
+        self.assertEqual(self.index.prepare_coexpression_group(self.feature), "CG1")
 
     def test_prepare_biomaterial_and_treatment(self):
         """Test prepare biomaterial and treatment."""
         sample = {"biomaterial_description": "desc", "treatment_name": "treat"}
-        self.feature.get_expression_samples = MagicMock(
-            return_value=[sample, sample]
-        )
-        self.assertEqual(
-            self.index.prepare_biomaterial(self.feature), ["desc"]
-        )
+        self.feature.get_expression_samples = MagicMock(return_value=[sample, sample])
+        self.assertEqual(self.index.prepare_biomaterial(self.feature), ["desc"])
         self.assertEqual(self.index.prepare_treatment(self.feature), ["treat"])
 
     @patch("machado.search_indexes.Featureprop.objects.get")
@@ -268,9 +252,7 @@ class FeatureIndexTest(TestCase):
 
         # Test ObjectDoesNotExist
         mock_fp_get.side_effect = ObjectDoesNotExist
-        self.assertEqual(
-            self.index.prepare_orthologs_biomaterial(self.feature), []
-        )
+        self.assertEqual(self.index.prepare_orthologs_biomaterial(self.feature), [])
 
     @patch("machado.search_indexes.Featureprop.objects.get")
     @patch("machado.search_indexes.Featureprop.objects.filter")
@@ -290,21 +272,15 @@ class FeatureIndexTest(TestCase):
             "machado.search_indexes.Featureprop.objects.filter"
         ) as mock_fp_filter_inner:
             mock_fp_filter_inner.return_value.exists.return_value = True
-            self.assertTrue(
-                self.index.prepare_orthologs_coexpression(self.feature)
-            )
+            self.assertTrue(self.index.prepare_orthologs_coexpression(self.feature))
 
             # have_coexp = False
             mock_fp_filter_inner.return_value.exists.return_value = False
-            self.assertFalse(
-                self.index.prepare_orthologs_coexpression(self.feature)
-            )
+            self.assertFalse(self.index.prepare_orthologs_coexpression(self.feature))
 
         # Test ObjectDoesNotExist
         mock_fp_get.side_effect = ObjectDoesNotExist
-        self.assertFalse(
-            self.index.prepare_orthologs_coexpression(self.feature)
-        )
+        self.assertFalse(self.index.prepare_orthologs_coexpression(self.feature))
 
     def test_prepare_display(self):
         """Test prepare display."""
@@ -317,9 +293,7 @@ class FeatureIndexTest(TestCase):
         mock_r.feature_id = 123
         mock_r.type.name = "part_of"
         self.feature.get_relationship = MagicMock(return_value=[mock_r])
-        self.assertEqual(
-            self.index.prepare_relationship(self.feature), ["123 part_of"]
-        )
+        self.assertEqual(self.index.prepare_relationship(self.feature), ["123 part_of"])
 
     def test_prepare_autocomplete(self):
         """Test prepare autocomplete."""

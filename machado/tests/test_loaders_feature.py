@@ -111,37 +111,27 @@ class FeatureLoaderTest(TestCase):
         pub_dbxref = PubDbxref.objects.create(
             pub=pub, dbxref=dbxref_doi, is_current=True
         )
-        loader = FeatureLoaderBase(
-            "GFF_DOI", "test.gff", doi="10.1234/test_doi"
-        )
+        loader = FeatureLoaderBase("GFF_DOI", "test.gff", doi="10.1234/test_doi")
         loader.pub_dbxref_doi = pub_dbxref
         self.assertIsNotNone(loader.pub_dbxref_doi)
 
     def test_loader_base_init_doi_fail(self):
         """Test loader base init doi fail."""
         with self.assertRaisesRegex(ImportingError, "not registered"):
-            FeatureLoaderBase(
-                "GFF_DOI_FAIL", "test.gff", doi="nonexistent_doi"
-            )
+            FeatureLoaderBase("GFF_DOI_FAIL", "test.gff", doi="nonexistent_doi")
 
     def test_loader_base_init_pub_dbxref_fail(self):
         """Test loader base init pub dbxref fail."""
         db_doi = Db.objects.get_or_create(name="DOI")[0]
-        Dbxref.objects.get_or_create(
-            db=db_doi, accession="10.1234/missing_pub"
-        )
+        Dbxref.objects.get_or_create(db=db_doi, accession="10.1234/missing_pub")
         with self.assertRaisesRegex(
             ImportingError, "10.1234/missing_pub not registered"
         ):
-            FeatureLoaderBase(
-                "GFF_P_FAIL", "test.gff", doi="10.1234/missing_pub"
-            )
+            FeatureLoaderBase("GFF_P_FAIL", "test.gff", doi="10.1234/missing_pub")
 
     def test_feature_loader_init_fail(self):
         """Test feature loader init fail."""
-        with self.assertRaisesRegex(
-            ImportingError, "requires an organism parameter"
-        ):
+        with self.assertRaisesRegex(ImportingError, "requires an organism parameter"):
             FeatureLoader("GFF_INIT_FAIL", "test.gff", None)
 
     @patch("machado.loaders.feature.FeatureAttributesLoader")
@@ -164,9 +154,7 @@ class FeatureLoaderTest(TestCase):
             "name": "Name1",
         }
         db_fasta = Db.objects.get_or_create(name="FASTA_SOURCE")[0]
-        dbxref_contig = Dbxref.objects.create(
-            db=db_fasta, accession="CONTIG_S"
-        )
+        dbxref_contig = Dbxref.objects.create(db=db_fasta, accession="CONTIG_S")
         self.create_feat(
             "CONTIG_S",
             self.ensure_cvterm("chromosome", self.cv_seq),
@@ -174,9 +162,7 @@ class FeatureLoaderTest(TestCase):
         )
         loader.store_tabix_GFF_feature(tabix_feat, qtl=False)
         self.assertTrue(
-            Feature.objects.filter(
-                uniquename="FEAT_S", type__name="mRNA"
-            ).exists()
+            Feature.objects.filter(uniquename="FEAT_S", type__name="mRNA").exists()
         )
         self.assertTrue(
             Feature.objects.filter(
@@ -193,9 +179,7 @@ class FeatureLoaderTest(TestCase):
         tabix_feat.attributes = "ID=F_SO_F"
         mock_attrs = MockAttrLoader.return_value
         mock_attrs.get_attributes.return_value = {"id": "F_SO_F"}
-        with self.assertRaisesRegex(
-            ImportingError, "is not a sequence ontology term"
-        ):
+        with self.assertRaisesRegex(ImportingError, "is not a sequence ontology term"):
             loader.store_tabix_GFF_feature(tabix_feat, qtl=False)
 
     @patch("machado.loaders.feature.FeatureAttributesLoader")
@@ -210,15 +194,11 @@ class FeatureLoaderTest(TestCase):
         mock_attrs = MockAttrLoader.return_value
         mock_attrs.get_attributes.return_value = {"id": "F_C_F"}
         Db.objects.get_or_create(name="FASTA_SOURCE")
-        with self.assertRaisesRegex(
-            ImportingError, "FASTA_SOURCE MISSING_CONTIG"
-        ):
+        with self.assertRaisesRegex(ImportingError, "FASTA_SOURCE MISSING_CONTIG"):
             loader.store_tabix_GFF_feature(tabix_feat, qtl=False)
 
     @patch("machado.loaders.feature.FeatureAttributesLoader")
-    def test_store_tabix_GFF_feature_strand_minus_and_phase_error(
-        self, MockAttrLoader
-    ):
+    def test_store_tabix_GFF_feature_strand_minus_and_phase_error(self, MockAttrLoader):
         """Test store tabix GFF feature strand minus and phase error."""
         loader = FeatureLoader("GFF_SM", "test.gff", self.org)
         self.ensure_cvterm("mRNA", self.cv_seq)
@@ -234,9 +214,7 @@ class FeatureLoaderTest(TestCase):
         mock_attrs = MockAttrLoader.return_value
         mock_attrs.get_attributes.return_value = {"id": "F_SM"}
         db_fasta = Db.objects.get_or_create(name="FASTA_SOURCE")[0]
-        dbxref_c = Dbxref.objects.get_or_create(db=db_fasta, accession="C_SM")[
-            0
-        ]
+        dbxref_c = Dbxref.objects.get_or_create(db=db_fasta, accession="C_SM")[0]
         self.create_feat(
             "C_SM",
             self.ensure_cvterm("chromosome", self.cv_seq),
@@ -274,9 +252,7 @@ class FeatureLoaderTest(TestCase):
             dbxref=dbxref_contig,
         )
         loader.store_tabix_GFF_feature(tabix_feat, qtl=False)
-        self.assertTrue(
-            Feature.objects.filter(uniquename__startswith="auto").exists()
-        )
+        self.assertTrue(Feature.objects.filter(uniquename__startswith="auto").exists())
 
     @patch("machado.loaders.feature.FeatureAttributesLoader")
     def test_store_tabix_GFF_feature_qtl(self, MockAttrLoader):
@@ -304,9 +280,7 @@ class FeatureLoaderTest(TestCase):
         )
         loader.store_tabix_GFF_feature(tabix_feat, qtl=True)
         self.assertTrue(
-            Feature.objects.filter(
-                uniquename="QTL_F", type__name="QTL"
-            ).exists()
+            Feature.objects.filter(uniquename="QTL_F", type__name="QTL").exists()
         )
 
     @patch("machado.loaders.feature.FeatureAttributesLoader")
@@ -386,9 +360,7 @@ class FeatureLoaderTest(TestCase):
         f1 = self.create_feat("f_grp_ie_1", mRNA_type)
         self.create_feat("f_grp_ie_2", mRNA_type)
         # Create a prop manually to trigger IntegrityError on bulk_create
-        Featureprop.objects.create(
-            feature=f1, type=mRNA_type, value="val", rank=0
-        )
+        Featureprop.objects.create(feature=f1, type=mRNA_type, value="val", rank=0)
         with self.assertRaises(ImportingError):
             loader.store_feature_groups(
                 ["f_grp_ie_1", "f_grp_ie_2"],
@@ -428,9 +400,7 @@ class FeatureLoaderTest(TestCase):
         )
         dbxref5 = Dbxref.objects.create(db=db_f, accession="SECACC_F_5")
         f5 = self.create_feat("FEAT_F_5", mRNA_type)
-        FeatureDbxref.objects.create(
-            feature=f5, dbxref=dbxref5, is_current=True
-        )
+        FeatureDbxref.objects.create(feature=f5, dbxref=dbxref5, is_current=True)
         self.assertEqual(
             loader.retrieve_feature_id("SECACC_F_5", "mRNA_F"), f5.feature_id
         )
@@ -462,9 +432,7 @@ class FeatureLoaderTest(TestCase):
         feat = Feature.objects.get(uniquename="HIT_M_1")
         self.assertTrue(FeatureCvterm.objects.filter(feature=feat).exists())
         self.assertTrue(
-            FeatureDbxref.objects.filter(
-                feature=feat, dbxref__accession="X1"
-            ).exists()
+            FeatureDbxref.objects.filter(feature=feat, dbxref__accession="X1").exists()
         )
 
     def test_multispecies_store_bio_searchio_hit_interpro(self):
@@ -500,9 +468,7 @@ class FeatureLoaderTest(TestCase):
         self.assertIn("GO:9999", loader.ignored_goterms)
         feat = Feature.objects.get(uniquename="HIT_X_1")
         self.assertTrue(
-            FeatureDbxref.objects.filter(
-                feature=feat, dbxref__accession="O1"
-            ).exists()
+            FeatureDbxref.objects.filter(feature=feat, dbxref__accession="O1").exists()
         )
 
     def test_store_feature_publication(self):
@@ -518,9 +484,7 @@ class FeatureLoaderTest(TestCase):
             uniquename="pub_unique_1", type=null_cvterm, is_obsolete=False
         )
         PubDbxref.objects.create(pub=pub, dbxref=dbxref_doi, is_current=True)
-        loader.store_feature_publication(
-            "f_pub_1", "polypeptide", "10.1234/test_pub_1"
-        )
+        loader.store_feature_publication("f_pub_1", "polypeptide", "10.1234/test_pub_1")
         self.assertTrue(
             Feature.objects.get(
                 uniquename="f_pub_1"
@@ -576,9 +540,7 @@ class FeatureLoaderTest(TestCase):
         tabix_feat.info = "OTHER=VALUE"
         mock_attrs = MockAttrLoader.return_value
         mock_attrs.get_attributes.return_value = {"other": "value"}
-        with self.assertRaisesRegex(
-            ImportingError, "Impossible to get the attribute"
-        ):
+        with self.assertRaisesRegex(ImportingError, "Impossible to get the attribute"):
             loader.store_tabix_VCF_feature(tabix_feat)
 
     @patch("machado.loaders.feature.FeatureAttributesLoader")
@@ -596,9 +558,7 @@ class FeatureLoaderTest(TestCase):
         )
         PubDbxref.objects.create(pub=pub, dbxref=dbxref_doi, is_current=True)
 
-        loader = FeatureLoader(
-            "VCF_IE", "test.vcf", self.org, doi="10.1234/vcf_doi"
-        )
+        loader = FeatureLoader("VCF_IE", "test.vcf", self.org, doi="10.1234/vcf_doi")
         tabix_feat = MagicMock()
         tabix_feat.id = "VAR_IE"
         tabix_feat.ref = "A"
@@ -610,9 +570,7 @@ class FeatureLoaderTest(TestCase):
         mock_attrs = MockAttrLoader.return_value
         mock_attrs.get_attributes.return_value = {"vc": "SNP"}
         db_fasta = Db.objects.get_or_create(name="FASTA_SOURCE")[0]
-        dbxref_c1 = Dbxref.objects.get_or_create(db=db_fasta, accession="C1")[
-            0
-        ]
+        dbxref_c1 = Dbxref.objects.get_or_create(db=db_fasta, accession="C1")[0]
         self.create_feat(
             "C1",
             self.ensure_cvterm("chromosome", self.cv_seq),
@@ -669,9 +627,7 @@ class FeatureLoaderTest(TestCase):
         mRNA_type = self.ensure_cvterm("mRNA_DI", self.cv_seq)
         self.create_feat("f_dbx_inv_1", mRNA_type)
         with self.assertRaisesRegex(ImportingError, "Incorrect DBxRef"):
-            loader.store_feature_dbxref(
-                "f_dbx_inv_1", "mRNA_DI", "INVALID_DBX"
-            )
+            loader.store_feature_dbxref("f_dbx_inv_1", "mRNA_DI", "INVALID_DBX")
 
     def test_store_tabix_GFF_feature_parent_not_found(self):
         """Test store tabix GFF feature parent not found."""
@@ -685,13 +641,9 @@ class FeatureLoaderTest(TestCase):
     def test_store_tabix_GFF_feature_with_doi(self, MockAttrLoader):
         """Test store tabix GFF feature with doi."""
         db_doi = Db.objects.get_or_create(name="DOI")[0]
-        dbxref_doi = Dbxref.objects.get_or_create(
-            db=db_doi, accession="10.1000/1"
-        )[0]
+        dbxref_doi = Dbxref.objects.get_or_create(db=db_doi, accession="10.1000/1")[0]
         null_db = Db.objects.get_or_create(name="null_test")[0]
-        null_dbx = Dbxref.objects.get_or_create(
-            db=null_db, accession="null_test"
-        )[0]
+        null_dbx = Dbxref.objects.get_or_create(db=null_db, accession="null_test")[0]
         null_cv = Cv.objects.get_or_create(name="null_test")[0]
         null_cvterm = Cvterm.objects.get_or_create(
             name="null_test",
@@ -719,9 +671,7 @@ class FeatureLoaderTest(TestCase):
         tabix_mock.frame = "."
 
         db_fasta = Db.objects.get_or_create(name="FASTA_SOURCE")[0]
-        dbxref_contig = Dbxref.objects.create(
-            db=db_fasta, accession="CONTIG_DOI"
-        )
+        dbxref_contig = Dbxref.objects.create(db=db_fasta, accession="CONTIG_DOI")
         mRNA_type = self.ensure_cvterm("mRNA", self.cv_seq)
         self.ensure_cvterm("gene", self.cv_seq)
         self.create_feat("CONTIG_DOI", mRNA_type, dbxref=dbxref_contig)
@@ -734,9 +684,7 @@ class FeatureLoaderTest(TestCase):
         self.assertTrue(feat.FeaturePub_feature_Feature.exists())
 
     @patch("machado.loaders.feature.FeatureAttributesLoader")
-    def test_store_tabix_GFF_feature_location_integrity_error(
-        self, MockAttrLoader
-    ):
+    def test_store_tabix_GFF_feature_location_integrity_error(self, MockAttrLoader):
         """Test store tabix GFF feature location integrity error."""
         loader = FeatureLoader("GFF_LOC_IE", "test.gff", self.org)
         tabix_mock = MagicMock()
@@ -749,9 +697,7 @@ class FeatureLoaderTest(TestCase):
         tabix_mock.frame = "."
 
         db_fasta = Db.objects.get_or_create(name="FASTA_SOURCE")[0]
-        dbxref_contig = Dbxref.objects.create(
-            db=db_fasta, accession="CONTIG_LOC"
-        )
+        dbxref_contig = Dbxref.objects.create(db=db_fasta, accession="CONTIG_LOC")
         mRNA_type = self.ensure_cvterm("mRNA", self.cv_seq)
         self.ensure_cvterm("gene", self.cv_seq)
         self.create_feat("CONTIG_LOC", mRNA_type, dbxref=dbxref_contig)
@@ -781,7 +727,5 @@ class FeatureLoaderTest(TestCase):
         mock_attrs = MockAttrLoader.return_value
         mock_attrs.get_attributes.return_value = {"vc": "nonexistent_so_term"}
 
-        with self.assertRaisesRegex(
-            ImportingError, "is not a sequence ontology term"
-        ):
+        with self.assertRaisesRegex(ImportingError, "is not a sequence ontology term"):
             loader.store_tabix_VCF_feature(tabix_mock)

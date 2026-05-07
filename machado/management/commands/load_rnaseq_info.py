@@ -67,7 +67,7 @@ class Command(BaseCommand):
         assaydb: str,
         cpu: int = 1,
         verbosity: int = 0,
-        **options
+        **options,
     ):
         """Execute the main function."""
         history_obj = History()

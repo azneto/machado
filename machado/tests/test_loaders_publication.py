@@ -60,9 +60,7 @@ class PublicationTest(TestCase):
         test_bibtex2 = Pub.objects.get(uniquename="Cesar2013")
         self.assertEqual("12", test_bibtex2.volume)
         self.assertEqual(None, test_bibtex2.pages)
-        test_bibtex2_pub_dbxref = PubDbxref.objects.get(
-            pub_id=test_bibtex2.pub_id
-        )
+        test_bibtex2_pub_dbxref = PubDbxref.objects.get(pub_id=test_bibtex2.pub_id)
         self.assertEqual(test_bibtex2.pub_id, test_bibtex2_pub_dbxref.pub_id)
         # test remove publication (with cascade enabled)
         self.assertTrue(Pub.objects.filter(uniquename="Cesar2013").exists())
@@ -74,7 +72,5 @@ class PublicationTest(TestCase):
         self.assertFalse(Pub.objects.filter(uniquename="Cesar2013").exists())
         # check if dbxref remains
         self.assertTrue(
-            Dbxref.objects.filter(
-                accession="10.1111/s12122-012-1313-5"
-            ).exists()
+            Dbxref.objects.filter(accession="10.1111/s12122-012-1313-5").exists()
         )

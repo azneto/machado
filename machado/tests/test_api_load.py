@@ -34,9 +34,7 @@ class BaseLoadViewSetTest(TestCase):
     def setUp(self):
         """Set up test context."""
         self.factory = APIRequestFactory()
-        self.user = User.objects.create_user(
-            username="testuser", password="password"
-        )
+        self.user = User.objects.create_user(username="testuser", password="password")
 
 
 class OrganismViewSetTest(BaseLoadViewSetTest):
@@ -84,9 +82,7 @@ class OrganismViewSetTest(BaseLoadViewSetTest):
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         mock_thread.assert_called_once()
-        self.assertEqual(
-            mock_thread.call_args.kwargs["args"], ("remove_organism",)
-        )
+        self.assertEqual(mock_thread.call_args.kwargs["args"], ("remove_organism",))
         self.assertEqual(
             mock_thread.call_args.kwargs["kwargs"],
             {"organism": "Genus Species"},
@@ -131,9 +127,7 @@ class RelationsOntologyViewSetTest(BaseLoadViewSetTest):
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         mock_thread.assert_called_once()
-        self.assertEqual(
-            mock_thread.call_args.kwargs["args"], ("remove_ontology",)
-        )
+        self.assertEqual(mock_thread.call_args.kwargs["args"], ("remove_ontology",))
 
     def test_destroy_missing_name(self):
         """Test destroy missing name."""
@@ -164,9 +158,7 @@ class PublicationViewSetTest(BaseLoadViewSetTest):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         mock_thread.assert_called_once()
-        self.assertEqual(
-            mock_thread.call_args.kwargs["args"], ("load_publication",)
-        )
+        self.assertEqual(mock_thread.call_args.kwargs["args"], ("load_publication",))
         self.assertEqual(mock_thread.call_args.kwargs["kwargs"]["cpu"], 4)
 
     def test_create_no_file(self):
@@ -204,16 +196,12 @@ class SequenceOntologyViewSetTest(BaseLoadViewSetTest):
     def test_destroy_success(self, mock_thread):
         """Test destroy success."""
         view = SequenceOntologyViewSet.as_view({"delete": "destroy"})
-        request = self.factory.delete(
-            "/api/load/sequence_ontology", {"name": "so_cv"}
-        )
+        request = self.factory.delete("/api/load/sequence_ontology", {"name": "so_cv"})
         force_authenticate(request, user=self.user)
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         mock_thread.assert_called_once()
-        self.assertEqual(
-            mock_thread.call_args.kwargs["args"], ("remove_ontology",)
-        )
+        self.assertEqual(mock_thread.call_args.kwargs["args"], ("remove_ontology",))
 
     def test_destroy_missing_name(self):
         """Test destroy missing name."""
@@ -242,24 +230,18 @@ class GeneOntologyViewSetTest(BaseLoadViewSetTest):
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         mock_thread.assert_called_once()
-        self.assertEqual(
-            mock_thread.call_args.kwargs["args"], ("load_gene_ontology",)
-        )
+        self.assertEqual(mock_thread.call_args.kwargs["args"], ("load_gene_ontology",))
 
     @patch("machado.api.views.load.Thread")
     def test_destroy_success(self, mock_thread):
         """Test destroy success."""
         view = GeneOntologyViewSet.as_view({"delete": "destroy"})
-        request = self.factory.delete(
-            "/api/load/gene_ontology", {"name": "go_cv"}
-        )
+        request = self.factory.delete("/api/load/gene_ontology", {"name": "go_cv"})
         force_authenticate(request, user=self.user)
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         mock_thread.assert_called_once()
-        self.assertEqual(
-            mock_thread.call_args.kwargs["args"], ("remove_ontology",)
-        )
+        self.assertEqual(mock_thread.call_args.kwargs["args"], ("remove_ontology",))
 
     def test_destroy_missing_name(self):
         """Test destroy missing name."""
@@ -284,9 +266,7 @@ class FastaViewSetTest(BaseLoadViewSetTest):
             "organism": "Test org",
             "soterm": "chromosome",
         }
-        request = self.factory.post(
-            "/api/load/fasta", data, format="multipart"
-        )
+        request = self.factory.post("/api/load/fasta", data, format="multipart")
         force_authenticate(request, user=self.user)
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -541,9 +521,7 @@ class GFFViewSetTest(BaseLoadViewSetTest):
             ({"file": f, "tbiFile": f}, "organism"),
         ]
         for data, missing in cases:
-            request = self.factory.post(
-                "/api/load/gff", data, format="multipart"
-            )
+            request = self.factory.post("/api/load/gff", data, format="multipart")
             force_authenticate(request, user=self.user)
             response = view(request)
             self.assertEqual(
@@ -569,6 +547,4 @@ class GFFViewSetTest(BaseLoadViewSetTest):
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         mock_thread.assert_called_once()
-        self.assertEqual(
-            mock_thread.call_args.kwargs["args"], ("remove_file",)
-        )
+        self.assertEqual(mock_thread.call_args.kwargs["args"], ("remove_file",))

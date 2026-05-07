@@ -69,7 +69,7 @@ class Command(BaseCommand):
         url: str = None,
         doi: str = None,
         verbosity: int = 1,
-        **options
+        **options,
     ) -> None:
         """Execute the main function."""
         history_obj = History()

@@ -42,7 +42,7 @@ class Command(BaseCommand):
         infraspecific_name: str = None,
         comment: str = None,
         verbosity: int = 1,
-        **options
+        **options,
     ) -> None:
         """Execute the main function."""
         history_obj = History()

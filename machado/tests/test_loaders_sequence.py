@@ -44,9 +44,7 @@ class SequenceLoaderTest(TestCase):
             is_relationshiptype=1,
         )[0]
 
-        self.dbxref_gene = Dbxref.objects.create(
-            db=self.db_internal, accession="gene"
-        )
+        self.dbxref_gene = Dbxref.objects.create(db=self.db_internal, accession="gene")
         self.cvterm_gene = Cvterm.objects.get_or_create(
             name="gene",
             cv=self.db_seq,
@@ -81,9 +79,7 @@ class SequenceLoaderTest(TestCase):
     def test_store_biopython_seq_record_success(self):
         """Test store biopython seq record success."""
         loader = SequenceLoader("test.fa", self.org)
-        seq_record = SeqRecord(
-            Seq("ATGC"), id="feat1", description="Description 1"
-        )
+        seq_record = SeqRecord(Seq("ATGC"), id="feat1", description="Description 1")
         loader.store_biopython_seq_record(seq_record, "gene")
 
         feature = Feature.objects.get(uniquename="feat1")
@@ -114,9 +110,7 @@ class SequenceLoaderTest(TestCase):
         loader.store_biopython_seq_record(seq_record, "gene")
 
         feature = Feature.objects.get(uniquename="feat1")
-        self.assertTrue(
-            FeaturePub.objects.filter(feature=feature, pub=pub).exists()
-        )
+        self.assertTrue(FeaturePub.objects.filter(feature=feature, pub=pub).exists())
 
     def test_add_sequence_to_feature_success(self):
         """Test add sequence to feature success."""
@@ -149,8 +143,6 @@ class SequenceLoaderTest(TestCase):
         """Test store biopython seq record ignore residues."""
         loader = SequenceLoader("test.fa", self.org)
         seq_record = SeqRecord(Seq("ATGC"), id="feat2")
-        loader.store_biopython_seq_record(
-            seq_record, "gene", ignore_residues=True
-        )
+        loader.store_biopython_seq_record(seq_record, "gene", ignore_residues=True)
         feature = Feature.objects.get(uniquename="feat2")
         self.assertEqual(feature.residues, "")

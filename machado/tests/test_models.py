@@ -50,18 +50,12 @@ class DbModelTest(TestCase):
         )
         test_doi = "10.1111/t12121-013-1415-6"
         test_db_doi = Db.objects.create(name="doi")
-        test_dbxref_doi = Dbxref.objects.create(
-            accession=test_doi, db=test_db_doi
-        )
-        PubDbxref.objects.create(
-            pub=test_pub, dbxref=test_dbxref_doi, is_current=True
-        )
+        test_dbxref_doi = Dbxref.objects.create(accession=test_doi, db=test_db_doi)
+        PubDbxref.objects.create(pub=test_pub, dbxref=test_dbxref_doi, is_current=True)
 
         pub_test = Pub.objects.get(uniquename="Test2018")
         self.assertEqual("2018", pub_test.pyear)
-        self.assertEqual(
-            "10.1111/t12121-013-1415-6", test_dbxref_doi.accession
-        )
+        self.assertEqual("10.1111/t12121-013-1415-6", test_dbxref_doi.accession)
 
         test_entry = dict()
         test_entry["ID"] = "Chado2003"

@@ -66,9 +66,7 @@ class JBrowseNamesViewSetTest(TestCase):
         mock_filter.return_value = mock_qs
         mock_qs.exclude.return_value = mock_qs
         view = JBrowseNamesViewSet.as_view({"get": "list"})
-        request = self.factory.get(
-            "/api/jbrowse/names", {"organism": "test_org"}
-        )
+        request = self.factory.get("/api/jbrowse/names", {"organism": "test_org"})
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         mock_qs.filter.assert_any_call(organism=mock_org)
@@ -80,9 +78,7 @@ class JBrowseNamesViewSetTest(TestCase):
         mock_filter.return_value = mock_qs
         mock_qs.exclude.return_value = mock_qs
         view = JBrowseNamesViewSet.as_view({"get": "list"})
-        request = self.factory.get(
-            "/api/jbrowse/names", {"startswith": "test"}
-        )
+        request = self.factory.get("/api/jbrowse/names", {"startswith": "test"})
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         mock_qs.filter.assert_any_call(uniquename__startswith="test")

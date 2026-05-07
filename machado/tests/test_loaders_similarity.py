@@ -63,16 +63,10 @@ class SimilarityLoaderTest(TestCase):
             is_relationshiptype=1,
         )
 
-        self.org_q = Organism.objects.create(
-            genus="GenusQ", species="speciesQ"
-        )
-        self.org_s = Organism.objects.create(
-            genus="GenusS", species="speciesS"
-        )
+        self.org_q = Organism.objects.create(genus="GenusQ", species="speciesQ")
+        self.org_s = Organism.objects.create(genus="GenusS", species="speciesS")
 
-        self.dbxref_mrna = Dbxref.objects.create(
-            db=self.db_internal, accession="mRNA"
-        )
+        self.dbxref_mrna = Dbxref.objects.create(db=self.db_internal, accession="mRNA")
         self.type_mrna = Cvterm.objects.create(
             name="mRNA",
             cv=self.cv_seq,
@@ -108,9 +102,7 @@ class SimilarityLoaderTest(TestCase):
             input_format="blast-xml",
         )
         self.assertEqual(
-            loader.retrieve_id_from_description(
-                "some data id=FEAT1 more data"
-            ),
+            loader.retrieve_id_from_description("some data id=FEAT1 more data"),
             "FEAT1",
         )
         self.assertIsNone(loader.retrieve_id_from_description("no id here"))
@@ -282,9 +274,7 @@ class SimilarityLoaderTest(TestCase):
         hsp_mock.query_id = "NONEXISTENT"
         hsp_mock.query_description = "data id=FEAT_DESC"
 
-        self.assertEqual(
-            loader.retrieve_query_from_hsp(hsp_mock), q_feat.feature_id
-        )
+        self.assertEqual(loader.retrieve_query_from_hsp(hsp_mock), q_feat.feature_id)
 
     def test_interproscan_mRNA_annotation(self):
         """Test interproscan mRNA annotation."""
@@ -299,9 +289,7 @@ class SimilarityLoaderTest(TestCase):
             input_format="interproscan-xml",
         )
 
-        dbxref_poly = Dbxref.objects.create(
-            db=self.db_internal, accession="poly"
-        )
+        dbxref_poly = Dbxref.objects.create(db=self.db_internal, accession="poly")
         type_poly = Cvterm.objects.create(
             name="polypeptide",
             cv=self.cv_seq,
