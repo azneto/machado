@@ -129,8 +129,7 @@ def main():
         manage_py.chmod(manage_py.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP)
 
     # ── Print next steps ─────────────────────────────────────────────────────
-    print(
-        f"""
+    print(f"""
   ✓ machado project created at: {target}
 
   Next steps:
@@ -142,8 +141,7 @@ def main():
   Optional:
     • Enable Elasticsearch by uncommenting ELASTICSEARCH_URL in .env
     • See .env.example for all available settings
-"""
-    )
+""")
 
 
 if __name__ == "__main__":
