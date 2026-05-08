@@ -62,7 +62,7 @@ The features need to be loaded previously or won't be registered."""
         soterm: str = "mRNA",
         cpu: int = 1,
         verbosity: int = 0,
-        **options
+        **options,
     ):
         """Execute the main function."""
         history_obj = History()

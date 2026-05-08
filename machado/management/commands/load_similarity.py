@@ -91,7 +91,7 @@ class Command(BaseCommand):
         algorithm: str = None,
         cpu: int = 1,
         verbosity: int = 1,
-        **options
+        **options,
     ):
         """Execute the main function."""
         history_obj = History()

@@ -50,6 +50,7 @@ class PublicUserActions(viewsets.GenericViewSet):
     )
     @action(detail=False, methods=["post"])
     def login(self, request):
+        """Authenticate user and return token."""
         email = request.data.get("email")
         password = request.data.get("password")
 
@@ -93,6 +94,7 @@ class AuthenticatedUserActions(viewsets.GenericViewSet):
     )
     @action(detail=False, methods=["post"])
     def logout(self, request):
+        """Invalidate user token."""
         token = request.auth
         if token:
             token.delete()
@@ -118,6 +120,7 @@ class AdminUserActions(viewsets.GenericViewSet):
     )
     @action(detail=False, methods=["get"])
     def list(self, request):
+        """List all users."""
         users = User.objects.all()
         if not users.exists():
             return Response(
@@ -143,6 +146,7 @@ class AdminUserActions(viewsets.GenericViewSet):
     )
     @action(detail=False, methods=["get"])
     def listUserById(self, request, id=None):
+        """Retrieve user by ID."""
         user = User.objects.filter(pk=id).first()
         if not user:
             return Response(
@@ -171,7 +175,7 @@ class AdminUserActions(viewsets.GenericViewSet):
     )
     @action(detail=False, methods=["get"])
     def listUserByUsername(self, request, username=None):
-
+        """Retrieve user by username."""
         try:
             user = User.objects.filter(username__icontains=username)
         except User.DoesNotExist:
@@ -218,6 +222,7 @@ class AdminUserActions(viewsets.GenericViewSet):
     )
     @action(detail=False, methods=["post"])
     def create(self, request):
+        """Create a new user."""
         serializer = UserCreateSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -237,6 +242,7 @@ class AdminUserActions(viewsets.GenericViewSet):
     )
     @action(detail=False, methods=["delete"])
     def delete(self, request, id=None):
+        """Delete a user."""
         user = User.objects.filter(pk=id).first()
         if user:
             user.delete()
@@ -278,6 +284,7 @@ class AdminUserActions(viewsets.GenericViewSet):
     )
     @action(detail=False, methods=["put"])
     def update(self, request, id=None):
+        """Update user information."""
         user = User.objects.filter(pk=id).first()
         if user:
             username = request.data.get("username")

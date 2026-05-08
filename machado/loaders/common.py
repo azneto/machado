@@ -155,10 +155,10 @@ def retrieve_organism(organism: str) -> Organism:
 def retrieve_feature_id(
     accession: str, soterm: str, organism: Union[str, Organism]
 ) -> int:
+    """Retrieve feature object."""
     if not isinstance(organism, Organism):
         organism = retrieve_organism(organism)
 
-    """Retrieve feature object."""
     # feature.uniquename
     try:
         return Feature.objects.get(

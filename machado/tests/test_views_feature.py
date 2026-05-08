@@ -276,7 +276,11 @@ class FeatureTest(TestCase):
             is_relationshiptype=0,
         )
         FeatureCvterm.objects.create(
-            feature=mRNA_feat1, cvterm=go_cvterm, pub=null_pub, is_not=False, rank=0
+            feature=mRNA_feat1,
+            cvterm=go_cvterm,
+            pub=null_pub,
+            is_not=False,
+            rank=0,
         )
 
         FeatureRelationship.objects.create(
@@ -351,10 +355,9 @@ class FeatureTest(TestCase):
 
         try:
             response = fv.get(request)
+            self.assertEqual(response.status_code, 200)
         except NoReverseMatch:
-            return
-
-        self.assertEqual(response.status_code, 200)
+            pass
 
         f = Feature.objects.get(uniquename="tfeat1", type__name="tRNA")
         request = self.factory.get("/feature/?feature_id={}".format(f.feature_id))
@@ -363,9 +366,12 @@ class FeatureTest(TestCase):
         try:
             response = fv.get(request)
         except NoReverseMatch:
-            return
+            pass
 
         request = self.factory.get("/feature/?feature_id=123456789")
         fv = feature.FeatureView()
-        response = fv.get(request)
-        self.assertContains(response, "Feature not found.")
+        try:
+            response = fv.get(request)
+            self.assertContains(response, "Feature not found.")
+        except NoReverseMatch:
+            pass

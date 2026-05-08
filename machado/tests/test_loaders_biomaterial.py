@@ -61,7 +61,8 @@ class BiomaterialTest(TestCase):
         self.assertEqual(True, Db.objects.filter(name=test_namedb).exists())
         test_db = Db.objects.get(name=test_namedb)
         self.assertEqual(
-            True, Dbxref.objects.filter(db=test_db, accession=test_acc).exists()
+            True,
+            Dbxref.objects.filter(db=test_db, accession=test_acc).exists(),
         )
         test_dbxref = Dbxref.objects.get(db=test_db, accession=test_acc)
         self.assertEqual(

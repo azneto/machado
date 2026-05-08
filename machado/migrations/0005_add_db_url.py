@@ -15,7 +15,6 @@ class Migration(migrations.Migration):
 
     def update_db_urls(apps, schema_editor):
         """Update db urls."""
-
         db, created = Db.objects.get_or_create(name="BGD")
         db.urlprefix = "https"
         db.url = "bovinemine-v16.rnet.missouri.edu/bovinemine/keywordSearchResults.do?searchTerm="

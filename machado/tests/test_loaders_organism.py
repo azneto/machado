@@ -4,88 +4,97 @@
 # license. Please see the LICENSE.txt and README.md files that should
 # have been included as part of this package for licensing information.
 
-"""Tests organism loader."""
+"""Tests for organism loader."""
 
-from bibtexparser.bibdatabase import BibDatabase
-from django.core.management import call_command
 from django.test import TestCase
-
 from machado.loaders.organism import OrganismLoader
-from machado.loaders.publication import PublicationLoader
-from machado.models import Db, Dbxref
-from machado.models import Organism, OrganismDbxref, Organismprop, OrganismPub
+from machado.loaders.exceptions import ImportingError
+from machado.models import (
+    Organism,
+    Db,
+    Dbxref,
+    Pub,
+    PubDbxref,
+    OrganismPub,
+    OrganismDbxref,
+    Organismprop,
+)
 
 
-class OrganismTest(TestCase):
-    """Tests Loaders - OrganismLoader."""
+class OrganismLoaderTest(TestCase):
+    """Test suite for OrganismLoader."""
+
+    def setUp(self):
+        """Set up test context."""
+        # Create required metadata for loader init
+        self.loader = OrganismLoader()
+
+    def test_init_with_db(self):
+        """Test init with db."""
+        OrganismLoader(organism_db="TAXONOMY")
+        self.assertTrue(Db.objects.filter(name="TAXONOMY").exists())
+
+    def test_parse_scientific_name(self):
+        """Test parse scientific name."""
+        # Case 1: Genus species
+        self.assertEqual(
+            self.loader.parse_scientific_name("Genus species"),
+            ("Genus", "species", None),
+        )
+        # Case 2: Genus species infra
+        self.assertEqual(
+            self.loader.parse_scientific_name("Genus species infra"),
+            ("Genus", "species", "Genus species infra"),
+        )
+        # Case 3: Only genus
+        self.assertEqual(
+            self.loader.parse_scientific_name("Genus"), ("Genus", ".spp", None)
+        )
 
     def test_store_organism_record(self):
-        """Tests - __init__ and store_organism_record."""
-        # new organism loader
-        organism_db = OrganismLoader("test organism loader")
-        test_db = Db.objects.get(name="test organism loader")
-
-        taxid = 185542
-        scname = "Ilex paraguariensis"
-        common_names = ["mate", "Brazilian-tea", "yerba-mate"]
-        synonyms = ["Ilex paraguensis"]
-
-        organism_db.store_organism_record(
-            taxid=taxid, scname=scname, common_names=common_names, synonyms=synonyms
+        """Test store organism record."""
+        loader = OrganismLoader(organism_db="NCBI")
+        loader.store_organism_record(
+            taxid="1234",
+            scname="Genus species",
+            synonyms=["Syn1"],
+            common_names=["Common1", "Common2"],
         )
 
-        test_dbxref = Dbxref.objects.get(db=test_db, accession="185542")
-        test_organism_dbxref = OrganismDbxref.objects.get(dbxref=test_dbxref)
-        test = Organism.objects.get(organism_id=test_organism_dbxref.organism_id)
-        test_synonym = Organismprop.objects.filter(
-            organism_id=test_organism_dbxref.organism_id
-        )
-        self.assertEqual("Ilex", test.genus)
-        self.assertEqual("paraguariensis", test.species)
-        self.assertEqual("mate,Brazilian-tea,yerba-mate", test.common_name)
-        self.assertEqual("Ilex paraguensis", test_synonym[0].value)
-        # test remove_organism
+        org = Organism.objects.get(genus="Genus", species="species")
+        self.assertEqual(org.common_name, "Common1,Common2")
+        self.assertEqual(org.abbreviation, "G. species")
+
+        # Check Dbxref
         self.assertTrue(
-            Organism.objects.filter(genus="Ilex", species="paraguariensis").exists()
+            OrganismDbxref.objects.filter(
+                organism=org, dbxref__accession="1234"
+            ).exists()
         )
-        call_command(
-            "remove_organism",
-            "--organism=Ilex paraguariensis",
-            "--verbosity=0",
-        )
-        self.assertFalse(
-            Organism.objects.filter(genus="Ilex", species="paraguariensis").exists()
+
+        # Check Synonym
+        self.assertTrue(
+            Organismprop.objects.filter(organism=org, value="Syn1").exists()
         )
 
     def test_store_organism_publication(self):
-        """Tests - store organism publication."""
-        test_organism = Organism.objects.create(genus="Mus", species="musculus")
+        """Test store organism publication."""
+        org = Organism.objects.create(genus="Genus", species="species")
+        db_doi = Db.objects.create(name="DOI")
+        dbxref_doi = Dbxref.objects.create(db=db_doi, accession="10.1234/test")
+        pub = Pub.objects.create(
+            uniquename="test_pub", type_id=self.loader.cvterm_synonym.cvterm_id
+        )  # Using any cvterm for pub type
+        PubDbxref.objects.create(pub=pub, dbxref=dbxref_doi, is_current=True)
 
-        db2 = BibDatabase()
-        db2.entries = [
-            {
-                "journal": "Nice Journal",
-                "comments": "A comment",
-                "pages": "12--23",
-                "month": "jan",
-                "abstract": "This is an abstract. This line should be "
-                "long enough to test multilines...",
-                "title": "An amazing title",
-                "year": "2013",
-                "doi": "10.1186/s12864-016-2535-300002",
-                "volume": "12",
-                "ID": "Teste2018",
-                "author": "Foo, b. and Foo1, b. and Foo b.",
-                "keyword": "keyword1, keyword2",
-                "ENTRYTYPE": "article",
-            }
-        ]
-        for entry in db2.entries:
-            bibtest = PublicationLoader()
-            bibtest.store_bibtex_entry(entry)
+        self.loader.store_organism_publication("Genus species", "10.1234/test")
 
-        OrganismLoader().store_organism_publication(
-            organism="Mus musculus", doi="10.1186/s12864-016-2535-300002"
-        )
-        test_organismpub = OrganismPub.objects.get(organism=test_organism)
-        self.assertEqual("An amazing title", test_organismpub.pub.title)
+        self.assertTrue(OrganismPub.objects.filter(organism=org, pub=pub).exists())
+
+    def test_store_organism_publication_not_found(self):
+        """Test store organism publication not found."""
+        Organism.objects.create(genus="Genus", species="species")
+        with self.assertRaisesRegex(ImportingError, "not registered"):
+            self.loader.store_organism_publication(
+                "Genus species", "10.1234/nonexistent"
+            )

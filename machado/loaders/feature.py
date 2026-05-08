@@ -93,7 +93,6 @@ class FeatureLoader(FeatureLoaderBase):
         self, source: str, filename: str, organism: Organism, doi: str = None
     ) -> None:
         """Execute the init function."""
-
         if organism is not None:
             self.organism = organism
         else:
@@ -103,7 +102,6 @@ class FeatureLoader(FeatureLoaderBase):
 
     def store_tabix_GFF_feature(self, tabix_feature: GTFProxy, qtl: bool) -> None:
         """Store tabix feature."""
-
         filecontent = "qtl" if qtl else "genome"
 
         attrs_loader = FeatureAttributesLoader(filecontent=filecontent)
@@ -284,7 +282,6 @@ class FeatureLoader(FeatureLoaderBase):
 
     def store_tabix_VCF_feature(self, tabix_feature: VCFProxy) -> None:
         """Store tabix feature from VCF files."""
-
         attrs_loader = FeatureAttributesLoader(filecontent="polymorphism")
         attrs_dict = attrs_loader.get_attributes(tabix_feature.info)
         self.ignored_attrs = attrs_loader.ignored_attrs
@@ -550,11 +547,7 @@ class MultispeciesFeatureLoader(FeatureLoaderBase):
     help = "Load multi-organism feature records."
 
     def retrieve_feature_id(self, accession: str, soterm: str) -> int:
-        """
-        like machado.loaders.common.retreive_feature_id, but assumes acession is unique across all organisms
-        """
-
-        """Retrieve feature object."""
+        """Retrieve feature object assuming unique across all organisms."""
         # feature.uniquename
         try:
             return Feature.objects.get(
@@ -611,7 +604,6 @@ class MultispeciesFeatureLoader(FeatureLoaderBase):
 
     def store_bio_searchio_hit(self, searchio_hit: Hit, target: str) -> None:
         """Store bio searchio hit."""
-
         organism_obj, created = Organism.objects.get_or_create(
             abbreviation="multispecies",
             genus="multispecies",

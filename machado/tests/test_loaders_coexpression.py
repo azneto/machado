@@ -348,7 +348,11 @@ class CoexpressionTest(TestCase):
 
         # clusters setup
         test_cluster1_name = "ath_coexpr_mcl_1"
-        test_cluster1 = [test_featurename1, test_featurename2, test_featurename3]
+        test_cluster1 = [
+            test_featurename1,
+            test_featurename2,
+            test_featurename3,
+        ]
         test_cluster2_name = "ath_coexpr_mcl_2"
         test_cluster2 = [test_featurename4, test_featurename5]
         test_cluster3_name = "ath_coexpr_mcl_3"
@@ -360,43 +364,64 @@ class CoexpressionTest(TestCase):
         )
         soterm = "polypeptide"
         test_coexpression_loader.store_feature_groups(
-            group=test_cluster1, soterm=soterm, term=term, value=test_cluster1_name
+            group=test_cluster1,
+            soterm=soterm,
+            term=term,
+            value=test_cluster1_name,
         )
         test_coexpression_loader.store_feature_groups(
-            group=test_cluster2, soterm=soterm, term=term, value=test_cluster2_name
+            group=test_cluster2,
+            soterm=soterm,
+            term=term,
+            value=test_cluster2_name,
         )
         test_coexpression_loader.store_feature_groups(
-            group=test_cluster3, soterm=soterm, term=term, value=test_cluster3_name
+            group=test_cluster3,
+            soterm=soterm,
+            term=term,
+            value=test_cluster3_name,
         )
         # check entire cluster1 relationships (not in reverse)
         self.assertTrue(
             Featureprop.objects.filter(
-                feature_id=test_feature1.feature_id, type=term, value=test_cluster1_name
+                feature_id=test_feature1.feature_id,
+                type=term,
+                value=test_cluster1_name,
             ).exists()
         )
         self.assertTrue(
             Featureprop.objects.filter(
-                feature_id=test_feature3.feature_id, type=term, value=test_cluster1_name
+                feature_id=test_feature3.feature_id,
+                type=term,
+                value=test_cluster1_name,
             ).exists()
         )
         self.assertTrue(
             Featureprop.objects.filter(
-                feature_id=test_feature2.feature_id, type=term, value=test_cluster1_name
+                feature_id=test_feature2.feature_id,
+                type=term,
+                value=test_cluster1_name,
             ).exists()
         )
         # check cluster2 relationships
         self.assertTrue(
             Featureprop.objects.filter(
-                feature_id=test_feature5.feature_id, type=term, value=test_cluster2_name
+                feature_id=test_feature5.feature_id,
+                type=term,
+                value=test_cluster2_name,
             ).exists()
         )
         self.assertTrue(
             Featureprop.objects.filter(
-                feature_id=test_feature4.feature_id, type=term, value=test_cluster2_name
+                feature_id=test_feature4.feature_id,
+                type=term,
+                value=test_cluster2_name,
             ).exists()
         )
         self.assertFalse(
             Featureprop.objects.filter(
-                feature_id=test_feature6.feature_id, type=term, value=test_cluster3_name
+                feature_id=test_feature6.feature_id,
+                type=term,
+                value=test_cluster3_name,
             ).exists()
         )

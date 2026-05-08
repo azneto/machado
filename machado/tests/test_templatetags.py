@@ -43,5 +43,47 @@ class MachadoExtrasTest(TestCase):
             "selected_facets=organism:Arabidopsis thaliana"
         )
         context = {"request": request}
-        result = machado_extras.remove_facet(context, "organism")
+        machado_extras.remove_facet(context, "organism")
+
+    def test_param_replace_order_by(self):
+        """Tests - param_replace order_by."""
+        request = self.factory.get("/find/?q=&order_by=name")
+        context = {"request": request}
+        result = machado_extras.param_replace(context, order_by="name")
+        self.assertEqual("q=&order_by=-name", result)
+
+        result = machado_extras.param_replace(context, order_by="type")
+        self.assertEqual("q=&order_by=type", result)
+
+    def test_remove_query(self):
+        """Tests - remove_query."""
+        request = self.factory.get("/find/?q=test&page=1")
+        context = {"request": request}
+        result = machado_extras.remove_query(context)
+        self.assertEqual("page=1", result)
+
+    def test_remove_facet_field(self):
+        """Tests - remove_facet_field."""
+        request = self.factory.get(
+            "/find/?q=&selected_facets=so_term_exact:gene&"
+            "selected_facets=organism:Arabidopsis thaliana"
+        )
+        context = {"request": request}
+        result = machado_extras.remove_facet_field(
+            context, "organism:Arabidopsis thaliana"
+        )
         self.assertEqual("q=&selected_facets=so_term_exact%3Agene", result)
+
+    def test_get_item(self):
+        """Tests - get_item."""
+        data = {"key1": "value1"}
+        self.assertEqual("value1", machado_extras.get_item(data, "key1"))
+
+    def test_get_count(self):
+        """Tests - get_count."""
+        data = {"key1": [1, 2, 3]}
+        self.assertEqual(3, machado_extras.get_count(data, "key1"))
+
+    def test_split(self):
+        """Tests - split."""
+        self.assertEqual(["a", "b"], machado_extras.split("a,b", ","))

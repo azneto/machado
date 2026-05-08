@@ -566,12 +566,16 @@ class OrthologyTest(TestCase):
         # another example group5
         self.assertTrue(
             Featureprop.objects.filter(
-                feature_id=feature10.feature_id, type_id=term, value=group5_name
+                feature_id=feature10.feature_id,
+                type_id=term,
+                value=group5_name,
             ).exists()
         )
         self.assertTrue(
             Featureprop.objects.filter(
-                feature_id=feature17.feature_id, type_id=term, value=group5_name
+                feature_id=feature17.feature_id,
+                type_id=term,
+                value=group5_name,
             ).exists()
         )
         # another example:
@@ -579,7 +583,9 @@ class OrthologyTest(TestCase):
         # between features from different groups (machado0004 and machado0003)
         self.assertFalse(
             Featureprop.objects.filter(
-                feature_id=feature16.feature_id, type_id=term, value=group6_name
+                feature_id=feature16.feature_id,
+                type_id=term,
+                value=group6_name,
             ).exists()
         )
         self.assertFalse(
@@ -589,6 +595,8 @@ class OrthologyTest(TestCase):
         )
         self.assertFalse(
             Featureprop.objects.filter(
-                feature_id=feature14.feature_id, type_id=term, value=group1_name
+                feature_id=feature14.feature_id,
+                type_id=term,
+                value=group1_name,
             ).exists()
         )

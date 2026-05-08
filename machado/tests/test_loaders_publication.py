@@ -65,7 +65,9 @@ class PublicationTest(TestCase):
         # test remove publication (with cascade enabled)
         self.assertTrue(Pub.objects.filter(uniquename="Cesar2013").exists())
         call_command(
-            "remove_publication", "--doi=10.1111/s12122-012-1313-5", "--verbosity=0"
+            "remove_publication",
+            "--doi=10.1111/s12122-012-1313-5",
+            "--verbosity=0",
         )
         self.assertFalse(Pub.objects.filter(uniquename="Cesar2013").exists())
         # check if dbxref remains

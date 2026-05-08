@@ -70,7 +70,7 @@ class Command(BaseCommand):
         qtl: bool = False,
         cpu: int = 1,
         verbosity: int = 1,
-        **options
+        **options,
     ):
         """Execute the main function."""
         # retrieve only the file name

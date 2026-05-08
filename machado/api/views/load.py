@@ -171,8 +171,6 @@ class RelationsOntologyViewSet(viewsets.GenericViewSet):
         """Handle the POST request for loading organism."""
         in_memory_file = request.FILES["file"]
 
-        print(in_memory_file.name)
-
         destination = open(f"/tmp/{in_memory_file.name}", "wt")
         destination.write(in_memory_file.read().decode("ascii", "ignore"))
         destination.close()
@@ -336,8 +334,6 @@ class SequenceOntologyViewSet(viewsets.GenericViewSet):
         """Handle the POST request for loading sequence ontology."""
         in_memory_file = request.FILES["file"]
 
-        print(in_memory_file.name)
-
         destination = open(f"/tmp/{in_memory_file.name}", "wt")
         destination.write(in_memory_file.read().decode("ascii", "ignore"))
         destination.close()
@@ -499,7 +495,7 @@ class GeneOntologyViewSet(viewsets.GenericViewSet):
 
 
 class FastaViewSet(viewsets.GenericViewSet):
-    """ViewSet for loading fasta"""
+    """ViewSet for loading fasta."""
 
     serializer_class = loadSerializers.FastaSerializer
     permission_classes = [IsAuthenticated]
@@ -588,7 +584,6 @@ class FastaViewSet(viewsets.GenericViewSet):
     )
     def create(self, request):
         """Handle the POST request for loading fasta."""
-
         file = request.FILES.get("file")
         organism = request.data.get("organism", "")
         soterm = request.data.get("soterm", "")
@@ -658,7 +653,7 @@ class FastaViewSet(viewsets.GenericViewSet):
 
 
 class FeatureAnnotationViewSet(viewsets.GenericViewSet):
-    """ViewSet for loading feature annotation"""
+    """ViewSet for loading feature annotation."""
 
     serializer_class = loadSerializers.LoadFeatureAnnotationSerializer
     permission_classes = [IsAuthenticated]
@@ -795,7 +790,7 @@ class FeatureAnnotationViewSet(viewsets.GenericViewSet):
 
 
 class FeatureSequenceViewSet(viewsets.GenericViewSet):
-    """ViewSet for loading feature sequence"""
+    """ViewSet for loading feature sequence."""
 
     serializer_class = loadSerializers.LoadFeatureSequenceSerializer
     permission_classes = [IsAuthenticated]
@@ -900,7 +895,7 @@ class FeatureSequenceViewSet(viewsets.GenericViewSet):
 
 
 class FeaturePublicationViewSet(viewsets.GenericViewSet):
-    """ViewSet for loading feature publication"""
+    """ViewSet for loading feature publication."""
 
     serializer_class = loadSerializers.LoadFeaturePublicationSerializer
     permission_classes = [IsAuthenticated]
@@ -979,7 +974,7 @@ class FeaturePublicationViewSet(viewsets.GenericViewSet):
 
 
 class FeatureDBxRefViewSet(viewsets.GenericViewSet):
-    """ViewSet for loading feature dbxrefs"""
+    """ViewSet for loading feature dbxrefs."""
 
     serializer_class = loadSerializers.LoadFeatureDBxRefSerializer
     permission_classes = [IsAuthenticated]
@@ -1080,7 +1075,7 @@ class FeatureDBxRefViewSet(viewsets.GenericViewSet):
 
 
 class GFFViewSet(viewsets.GenericViewSet):
-    """ViewSet for loading GFF"""
+    """ViewSet for loading GFF."""
 
     serializer_class = loadSerializers.GFFSerializer
     permission_classes = [IsAuthenticated]
@@ -1152,7 +1147,6 @@ class GFFViewSet(viewsets.GenericViewSet):
     )
     def create(self, request):
         """Handle the POST request for loading GFF."""
-
         gffGile = request.FILES.get("file")
         tbiFile = request.FILES.get("tbiFile")
         organism = request.data.get("organism", "")

@@ -17,6 +17,7 @@ class UserCreateSerializer(serializers.Serializer):
     is_staff = serializers.BooleanField(default=False)
 
     def validate_username(self, value):
+        """Validate username uniqueness."""
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError(
                 "Um usuário com este nome de usuário já existe."
@@ -24,11 +25,13 @@ class UserCreateSerializer(serializers.Serializer):
         return value
 
     def validate_email(self, value):
+        """Validate email uniqueness."""
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Um usuário com este e-mail já existe.")
         return value
 
     def create(self, validated_data):
+        """Create and return a new user."""
         is_staff = validated_data.pop("is_staff", False)
 
         self.validate_email(validated_data["email"])

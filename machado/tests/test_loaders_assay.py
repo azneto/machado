@@ -47,11 +47,13 @@ class AssayTest(TestCase):
         self.assertEqual(True, Db.objects.filter(name=test_assaynamedb).exists())
         test_db = Db.objects.get(name=test_assaynamedb)
         self.assertEqual(
-            True, Dbxref.objects.filter(accession=test_assayacc, db=test_db).exists()
+            True,
+            Dbxref.objects.filter(accession=test_assayacc, db=test_db).exists(),
         )
         test_dbxref = Dbxref.objects.get(db=test_db, accession=test_assayacc)
         self.assertEqual(
-            True, Assay.objects.filter(name=test_assayname, dbxref=test_dbxref).exists()
+            True,
+            Assay.objects.filter(name=test_assayname, dbxref=test_dbxref).exists(),
         )
         self.assertEqual(
             True,
