@@ -49,7 +49,7 @@
                 </td>
 		<td>{{ result.name|default_if_none:'' }}</td>
                 <td>
-					{% for relationship in result.relationship %}
+					{% for relationship in result.relationships %}
 					  {% with relationship|split:" " as r_list %}
 					    <a href="{% url 'feature' %}?feature_id={{ r_list.0 }}">{{ r_list.1 }}</a>
 					  {% endwith %}

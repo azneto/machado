@@ -1,244 +1,171 @@
 # Search & Indexing — Comprehensive Reference
 
 > **Source files:**  
-> - `machado/search_indexes.py` — Elasticsearch index definition (301 lines)  
-> - `machado/forms.py` — FacetedSearchForm (57 lines)  
-> - `machado/views/search.py` — Search/export views (119 lines)
+> - `machado/search_models.py` — PostgreSQL materialized search index model
+> - `machado/forms.py` — `FeatureSearchForm` (PostgreSQL query generation)
+> - `machado/views/search.py` — `FeatureSearchView` and export views
+> - `machado/management/commands/rebuild_search_index.py` — Index population
 
 ---
 
 ## Architecture
 
-Machado uses **django-haystack 3.3.x** with **Elasticsearch 7.17** for full-text search and faceted navigation.
+Machado uses **PostgreSQL full-text search** natively (`tsvector`, `GIN` indexes, `pg_trgm`) via Django's `django.contrib.postgres.search` module. It does not require any external search services like Elasticsearch.
 
 ```
-User query → FacetedSearchForm → Haystack SearchQuerySet → Elasticsearch 7
-                                                              ↓
-                                     ← SearchResult objects ← Index (FeatureIndex)
+User query → FeatureSearchForm → Django ORM (SearchQuery) → PostgreSQL 15+
+                                                                ↓
+                                      ← FeatureSearchIndex model rows ← GIN Index
 ```
 
 ---
 
-## Elasticsearch Index (`FeatureIndex`)
+## PostgreSQL Search Index (`FeatureSearchIndex`)
 
-### Model Binding
+To maintain high performance without hammering the relational Chado schema, Machado uses a materialized search table that denormalizes the data required for searching and faceting.
 
-```python
-class FeatureIndex(indexes.SearchIndex, indexes.Indexable):
-    class Meta:
-        model = Feature
-```
+### Model Definition
 
-### Index Queryset
-
-Only indexes features that:
-1. Match types in `settings.MACHADO_VALID_TYPES` (e.g., `["gene", "mRNA", "polypeptide"]`)
-2. Belong to `cv.name = "sequence"`
-3. Have `is_obsolete = False`
+Located in `machado/search_models.py`.
 
 ```python
-def get_model(self):
-    return Feature
-
-def index_queryset(self, using=None):
-    return self.get_model().objects.filter(
-        type__name__in=settings.MACHADO_VALID_TYPES,
-        type__cv__name="sequence",
-        is_obsolete=False,
-    )
+class FeatureSearchIndex(models.Model):
+    feature = models.OneToOneField(Feature, on_delete=models.CASCADE, primary_key=True)
+    search_vector = SearchVectorField(null=True)       # GIN-indexed full-text vector
+    autocomplete_text = models.TextField(default="")   # Raw text for trigram/prefix search
+    ...
 ```
 
 ### Indexed Fields
 
-#### Document Field (full-text)
+#### Search Fields
 
 | Field | Type | Description |
 |---|---|---|
-| `text` | `CharField(document=True, use_template=True)` | Primary search field. Aggregates: feature name, uniquename, dbxrefs, GO terms, protein matches, annotations, DOIs, expression sample names, overlapping feature names |
+| `search_vector` | `SearchVectorField` | Primary full-text search column (English config). Aggregates: feature name, dbxrefs, GO terms, protein matches, annotations, DOIs, etc. |
+| `autocomplete_text` | `TextField` | Raw text used for API autocomplete endpoints. |
 
-#### Facet Fields
+#### Scalar Facet Fields
 
-| Field | Type | Faceted | Description |
-|---|---|---|---|
-| `organism` | `CharField` | ✅ | `"{genus} {species} [{infraspecific}]"` |
-| `so_term` | `CharField` | ✅ | Sequence Ontology type name (gene, mRNA, etc.) |
-| `uniquename` | `CharField` | ✅ | Feature unique identifier |
-| `name` | `CharField` | ✅ | Feature display name |
-| `display` | `CharField` | ✅ | Display text from `get_display()` |
-| `analyses` | `MultiValueField` | ✅ | Analysis program names (BLAST, InterProScan, etc.) |
-| `doi` | `MultiValueField` | ✅ | Publication DOIs |
-| `biomaterial` | `MultiValueField` | ✅ | RNA-seq biomaterial descriptions |
-| `treatment` | `MultiValueField` | ✅ | RNA-seq treatment names |
-| `orthology` | `BooleanField` | ✅ | Has orthologous group assignment |
-| `orthologous_group` | `CharField` | ✅ | Orthologous group ID (conditional) |
-| `coexpression` | `BooleanField` | ✅ | Has co-expression group assignment |
-| `coexpression_group` | `CharField` | ✅ | Co-expression group ID (conditional) |
-
-#### Autocomplete Field
+Stored as standard columns with b-tree indexes for fast `GROUP BY` counts.
 
 | Field | Type | Description |
 |---|---|---|
-| `autocomplete` | `EdgeNgramField` | Organism prefix + full text for typeahead. Uses EdgeNgram for prefix matching |
+| `organism` | `CharField` | `"{genus} {species} [{infraspecific}]"` |
+| `so_term` | `CharField` | Sequence Ontology type name |
+| `uniquename` | `CharField` | Feature unique identifier |
+| `orthology` | `BooleanField` | Has orthologous group assignment |
+| `orthologous_group` | `CharField` | Orthologous group ID (conditional) |
+| `coexpression` | `BooleanField` | Has co-expression group assignment |
+| `coexpression_group` | `CharField` | Co-expression group ID (conditional) |
 
-#### Relationship Field
+#### Array Facet Fields
+
+Stored as `JSONField` arrays in PostgreSQL.
 
 | Field | Type | Description |
 |---|---|---|
-| `relationship` | `MultiValueField` | Related feature IDs and types (parent/child via part_of) |
-
-### Data Preparation Methods
-
-The `FeatureIndex` class contains `prepare_*` methods for each field:
-
-```python
-def prepare_organism(self, obj):
-    """Build organism display string."""
-    organism = "{} {}".format(obj.organism.genus, obj.organism.species)
-    if obj.organism.infraspecific_name:
-        organism += " {}".format(obj.organism.infraspecific_name)
-    return organism
-
-def prepare_analyses(self, obj):
-    """Collect analysis program names from FeatureRelationship → Analysisfeature."""
-    # Returns list of unique program names linked via similarity relationships
-
-def prepare_text(self, obj):
-    """Aggregate all searchable text."""
-    # Combines: name, uniquename, dbxrefs, GO terms, protein matches,
-    # annotations, DOIs, expression samples, overlapping features
-```
-
-### Conditional Fields
-
-The `orthology`, `orthologous_group`, `coexpression`, and `coexpression_group` fields are **conditionally indexed** — they are only populated if the corresponding featureprop values exist for the feature.
+| `analyses` | `JSONField` | Analysis program names (BLAST, InterProScan) |
+| `doi` | `JSONField` | Publication DOIs |
+| `biomaterial` | `JSONField` | RNA-seq biomaterial descriptions |
+| `treatment` | `JSONField` | RNA-seq treatment names |
+| `orthologs_coexpression`| `JSONField` | Array of booleans representing coexpression state of orthologs |
 
 ---
 
 ## Search Form (`FeatureSearchForm`)
 
-### Class: `FeatureSearchForm(FacetedSearchForm)`
-
-Extends Haystack's `FacetedSearchForm` with custom facet processing.
+Located in `machado/forms.py`. Responsible for translating user input into Django ORM queries against `FeatureSearchIndex`.
 
 ### Query Processing
 
 ```python
-def search(self):
-    sqs = super().search()
-
-    # Process selected facets
-    for facet in self.selected_facets:
-        field, value = facet.split(":", 1)
-
-        # Escape special Elasticsearch characters
-        value = value.replace(":", "\\:")
-        value = value.replace("/", "\\/")
-        value = value.replace(".", "\\.")
-        value = value.replace('"', '\\"')
-
-        # Apply facet narrowing
-        if field == "analyses_exact":
-            sqs = sqs.narrow('analyses_exact:"{}"'.format(value))  # AND logic
-        else:
-            sqs = sqs.narrow('{}:"{}"'.format(field, value))       # OR logic
+def search(self, selected_facets=None):
+    qs = FeatureSearchIndex.objects.select_related("feature").all()
+    
+    if q:
+        query = SearchQuery(q, config="english", search_type="websearch")
+        qs = qs.filter(search_vector=query).annotate(
+            rank=SearchRank("search_vector", query)
+        ).order_by("-rank")
+        
+    # Apply facets...
+    return qs
 ```
 
 ### Facet Logic
 
-| Facet | Logic | Behavior |
+| Facet | Logic | Database Implementation |
 |---|---|---|
-| `analyses` | **AND (intersection)** | All selected analysis types must be present |
-| All others | **OR (union)** | Any selected value matches |
+| `analyses` | **AND (intersection)** | `qs.filter(analyses__contains=[v1]).filter(analyses__contains=[v2])` |
+| Array fields | **OR (union)** | `Q(doi__contains=[v1]) \| Q(doi__contains=[v2])` |
+| Scalar fields| **OR (union)** | `qs.filter(so_term__in=[v1, v2])` |
 
-### Character Escaping
+### Query Syntax
 
-The form escapes these characters before sending to Elasticsearch:
-- `:` → `\\:`
-- `/` → `\\/`
-- `.` → `\\.`
-- `"` → `\\"`
+Machado uses PostgreSQL's `websearch` query type, which natively supports intuitive syntax similar to web search engines:
+- `foo bar` — matches both words (unquoted)
+- `"foo bar"` — matches exact phrase
+- `foo -bar` — matches `foo` but excludes `bar`
+- `foo OR bar` — matches either word
 
 ---
 
-## Search View (`MachadoFacetedSearchView`)
+## Search Views (`FeatureSearchView`)
+
+Located in `machado/views/search.py`.
 
 ### Configuration
 
+The view defines a `FACET_FIELDS` dictionary mapping internal field names to user-friendly display labels.
+
+### Facet Count Computation
+
+To generate facet counts dynamically, the view performs database aggregations.
+
+**Scalar Facets:** Computed using standard Django ORM `values().annotate(Count())`.
 ```python
-FACET_FIELDS = [
-    ("organism", "Organism"),
-    ("so_term", "Type"),
-    ("analyses", "Analysis"),
-    ("orthology", "Orthology"),
-    ("orthologous_group", "Ortholog group"),
-    ("coexpression", "Co-expression"),
-    ("coexpression_group", "Co-expression group"),
-    ("biomaterial", "Biomaterial"),
-    ("treatment", "Treatment"),
-    ("doi", "DOI"),
-]
+qs.values(field).annotate(count=Count("pk")).order_by(field)[:100]
+```
+
+**Array Facets:** Computed using raw SQL with PostgreSQL's `jsonb_array_elements_text()` function to unnest the arrays before grouping and counting.
+```sql
+SELECT val, COUNT(*) FROM machado_featuresearchindex,
+jsonb_array_elements_text(field) AS val WHERE feature_id IN (...) GROUP BY val
 ```
 
 ### Features
 
-- **Pagination:** 50 results per page (configurable via `paginate_by`)
-- **Sorting:** Toggle ascending/descending via `order_by` URL parameter
-- **Facet ordering:** Alphabetical within each facet category
-- **Context data:** Injects `facet_fields_info` mapping for template rendering
-
-### Export View (`MachadoExportView`)
-
-Exports search results in TSV or FASTA format:
-- **TSV:** `organism | SO_term | uniquename | name | display`
-- **FASTA:** Standard FASTA format with feature metadata in header
+- **Pagination:** 50 results per page (configurable via `records` parameter)
+- **Sorting:** Toggle via `order_by` parameter (defaults to relevance rank if a search term is provided)
+- **Exporting:** `FeatureSearchExportView` streams results directly as TSV or FASTA without pagination limits.
 
 ---
 
 ## Template Tags for Search
 
-The `machado_extras` template tag library provides URL manipulation helpers:
+The `machado_extras` template tag library provides URL manipulation helpers for the frontend search UI:
 
 | Tag | Usage | Description |
 |---|---|---|
 | `{% param_replace key=value %}` | Add/replace URL parameter | Handles `selected_facets` (append), `order_by` (toggle direction), others (replace) |
 | `{% remove_query %}` | Clear search query | Removes `q` parameter, preserves facets |
 | `{% remove_facet "facet_name" %}` | Remove specific facet | Removes matching entries from `selected_facets` |
-| `{% remove_facet_field "field_exact" %}` | Remove entire facet category | Removes all entries starting with the field name |
+| `{% remove_facet_field "field" %}` | Remove entire facet category | Removes all entries starting with the field name |
 
 ---
 
-## Elasticsearch Configuration
+## Index Management
 
-### Required Settings
-
-```python
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'haystack.backends.elasticsearch7_backend.Elasticsearch7SearchEngine',
-        'URL': 'http://127.0.0.1:9200/',
-        'INDEX_NAME': 'haystack',
-    },
-}
-
-MACHADO_VALID_TYPES = ['gene', 'mRNA', 'polypeptide']
-```
-
-### Index Management Commands
+Because the search index is a materialized table (`FeatureSearchIndex`), it must be populated after data is loaded into the main Chado tables.
 
 ```bash
-# Build/rebuild the entire search index
-python manage.py rebuild_index
-
-# Update only changed records
-python manage.py update_index
-
-# Clear the search index
-python manage.py clear_index
+# Build or rebuild the search index
+python manage.py rebuild_search_index
 ```
 
 ### Performance Considerations
 
-- Index rebuilds can be slow for large datasets — use `--batch-size` parameter
-- The `autocomplete` EdgeNgram field increases index size but enables fast typeahead
-- `MultiValueField` facets (analyses, doi, biomaterial, treatment) support multiple values per document
-- The `prepare_text()` method performs extensive ORM queries — consider database query optimization for large indexes
+- The `rebuild_search_index` command gathers data from across the normalized Chado schema. For large databases, this can take a few minutes. It uses `--batch-size` (default 1000) for efficient bulk inserts.
+- A `GIN` index (`fsi_search_gin`) powers the fast full-text querying.
+- The `search_vector` column is populated inside the database at the end of the rebuild process using PostgreSQL's `to_tsvector()`.

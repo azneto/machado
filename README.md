@@ -11,7 +11,7 @@ Detailed documentation can be found in the [docs](docs/index.md) directory or in
 ## Features
 - There are data loaders for the major bioinformatics formats: fasta, gff, obo, bibtex, blast, interproscan, orthomcl
 - The Machado API delivers data directly to the JBrowse genome browser
-- The Haystack framework provides a very fast query interface using the Elasticsearch engine
+- Full-text search powered by PostgreSQL (no external search service needed)
 
 ## Installation
 Please refer to the [installation guide](docs/01-installation.md).

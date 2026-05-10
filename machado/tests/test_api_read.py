@@ -202,29 +202,38 @@ class AutocompleteViewSetTest(TestCase):
         """Set up test context."""
         self.factory = APIRequestFactory()
 
-    @patch("machado.api.views.read.SearchQuerySet")
-    def test_list(self, mock_sqs):
+    @patch("machado.api.views.read.FeatureSearchIndex.objects.filter")
+    def test_list(self, mock_filter):
         """Test list."""
         mock_item = MagicMock()
-        mock_item.autocomplete = "test string"
-        mock_sqs.return_value.filter.return_value = [mock_item]
+        mock_item.autocomplete_text = "test string"
+
+        # We slice the queryset in get_queryset: [: max_items * 10]
+        # So we mock the __getitem__ on the mock_filter return value.
+        mock_qs = MagicMock()
+        mock_qs.__getitem__.return_value = [mock_item]
+        mock_qs.__iter__.return_value = [mock_item]
+        mock_filter.return_value = mock_qs
+
         view = autocompleteViewSet.as_view({"get": "list"})
         request = self.factory.get("/api/autocomplete", {"q": "test"})
         response = view(request)
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("test", response.data[0])
 
-    @patch("machado.api.views.read.SearchQuerySet")
-    @patch("machado.api.views.read.search")
-    def test_list_attribute_error(self, mock_search, mock_sqs):
-        """Test list attribute error."""
-        mock_item = MagicMock()
-        mock_item.autocomplete = "test string"
-        mock_sqs.return_value.filter.return_value = [mock_item]
-        mock_search.side_effect = AttributeError
+    @patch("machado.api.views.read.FeatureSearchIndex.objects.filter")
+    def test_list_empty_result(self, mock_filter):
+        """Test list with no matches."""
+        mock_qs = MagicMock()
+        mock_qs.__getitem__.return_value = []
+        mock_qs.__iter__.return_value = []
+        mock_filter.return_value = mock_qs
+
         view = autocompleteViewSet.as_view({"get": "list"})
         request = self.factory.get("/api/autocomplete", {"q": "test"})
         response = view(request)
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
 

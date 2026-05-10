@@ -3,12 +3,15 @@
 # This code is part of the machado distribution and governed by its
 # license. Please see the LICENSE.txt and README.md files that should
 # have been included as part of this package for licensing information.
-"""Search views."""
+"""Search views — PostgreSQL full-text search."""
 
-from haystack.generic_views import FacetedSearchView
+from django.db import connection
+from django.db.models import Count
+from django.views.generic import ListView
 
 from machado.forms import FeatureSearchForm
 from machado.models import Featureprop
+from machado.models import FeatureSearchIndex
 
 FACET_FIELDS = {
     "organism": "Filter by organism (gene, mRNA, polypeptide)",
@@ -16,7 +19,6 @@ FACET_FIELDS = {
     "orthology": "Filter by orthology (polypeptide)",
     "coexpression": "Filter by coexpression (mRNA)",
     "orthologs_coexpression": "Filter by coexpression in orthologous groups members (polypeptide)",
-    # "orthologs_biomaterial": "Filter by biomaterial in orthologous groups members (polypeptide)",
     "analyses": "Filter by blast and inteproscan (polypeptide)",
     "biomaterial": "Filter by RNA-seq biomaterial (mRNA)",
     "treatment": "Filter by RNA-Seq sample (mRNA)",
@@ -25,55 +27,92 @@ FACET_FIELDS = {
     "doi": "Filter by related publications (gene, mRNA, polypeptide)",
 }
 
+# Fields stored as JSON arrays — need special aggregation
+_ARRAY_FACET_FIELDS = {
+    "analyses",
+    "biomaterial",
+    "treatment",
+    "doi",
+    "orthologs_coexpression",
+}
 
-class FeatureSearchView(FacetedSearchView):
-    """Search view."""
+# Scalar facet fields (simple GROUP BY)
+_SCALAR_FACET_FIELDS = {k for k in FACET_FIELDS if k not in _ARRAY_FACET_FIELDS}
 
-    load_all = False
-    form_class = FeatureSearchForm
-    facet_fields = list(FACET_FIELDS.keys())
+
+class FeatureSearchView(ListView):
+    """Faceted search view backed by PostgreSQL FTS."""
+
+    model = FeatureSearchIndex
     template_name = "search_result.html"
     context_object_name = "object_list"
+    paginate_by = 50
 
-    def get_queryset(self, *args, **kwargs):
-        """Get queryset."""
-        qs = super(FeatureSearchView, self).get_queryset(*args, **kwargs)
+    def get_queryset(self):
+        """Build the filtered search queryset."""
+        form = FeatureSearchForm(self.request.GET)
+        selected_facets = self.request.GET.getlist("selected_facets")
 
-        if self.request.GET.get("order_by"):
-            order_by_term = self.request.GET.get("order_by")
+        if form.is_valid():
+            qs = form.search(selected_facets=selected_facets)
         else:
-            order_by_term = "uniquename"
+            qs = FeatureSearchIndex.objects.none()
 
+        # Ordering
+        order_by = self.request.GET.get("order_by", "uniquename")
+        q = self.request.GET.get("q", "").strip()
+        if q and not self.request.GET.get("order_by"):
+            # default to relevance when searching
+            qs = qs.order_by("-rank", "uniquename")
+        else:
+            qs = qs.order_by(order_by)
+
+        # Per-page records
         if self.request.GET.get("records"):
-            self.paginate_by = self.request.GET.get("records")
-        else:
-            self.paginate_by = 50
+            try:
+                self.paginate_by = int(self.request.GET["records"])
+            except (ValueError, TypeError):
+                pass
 
-        for field in self.facet_fields:
-            qs = qs.facet(field, min_doc_count=1, size=100).order_by(
-                "{}_exact".format(order_by_term)
-            )
+        # cache for facet computation in get_context_data
+        self._queryset_for_facets = qs
         return qs
 
-    def get_context_data(self, *args, **kwargs):
-        """Get context data."""
-        context = super(FeatureSearchView, self).get_context_data(*args, **kwargs)
-        so_term_count = 0
-        selected_facets = list()
-        selected_facets_fields = list()
-        for facet in self.get_form_kwargs()["selected_facets"]:
-            facet_field, facet_query = facet.split(":", 1)
-            if facet_field == "so_term":
-                so_term_count += 1
-            selected_facets_fields.append(facet_field)
-            selected_facets.append(facet)
+    def get_context_data(self, **kwargs):
+        """Inject facet counts and metadata into the template context."""
+        context = super().get_context_data(**kwargs)
+        qs = self._queryset_for_facets
 
-        context["so_term_count"] = so_term_count
+        # ── Compute facets ───────────────────────────────────────────────
+        facets = {}
+        for field in FACET_FIELDS:
+            if field in _ARRAY_FACET_FIELDS:
+                facets[field] = self._compute_array_facet(qs, field)
+            else:
+                counts = (
+                    qs.values(field)
+                    .annotate(count=Count("pk"))
+                    .filter(count__gt=0)
+                    .order_by(field)[:100]
+                )
+                facets[field] = [
+                    (row[field], row["count"])
+                    for row in counts
+                    if row[field] is not None
+                ]
 
+        selected_facets = self.request.GET.getlist("selected_facets")
+        selected_facets_fields = [f.split(":")[0] for f in selected_facets]
+
+        so_term_count = sum(1 for f in selected_facets if f.startswith("so_term:"))
+
+        context["facets"] = {"fields": facets}
         context["facet_fields_order"] = list(FACET_FIELDS.keys())
         context["facet_fields_desc"] = FACET_FIELDS
         context["selected_facets"] = selected_facets
         context["selected_facets_fields"] = selected_facets_fields
+        context["so_term_count"] = so_term_count
+        context["query"] = self.request.GET.get("q", "")
 
         context["orthologs"] = Featureprop.objects.filter(
             type__name="orthologous group", type__cv__name="feature_property"
@@ -85,34 +124,68 @@ class FeatureSearchView(FacetedSearchView):
 
         return context
 
+    @staticmethod
+    def _compute_array_facet(qs, field):
+        """Unnest JSON arrays and count occurrences via raw SQL."""
+        # Build a subquery using the PKs from the filtered queryset
+        pks = qs.values_list("pk", flat=True)
+        if not pks.exists():
+            return []
 
-class FeatureSearchExportView(FacetedSearchView):
-    """Export search results view."""
+        sql = """
+            SELECT val, COUNT(*) AS cnt
+            FROM machado_featuresearchindex,
+                 jsonb_array_elements_text({field}) AS val
+            WHERE feature_id IN (
+                SELECT feature_id FROM machado_featuresearchindex
+                WHERE feature_id = ANY(%s)
+            )
+            GROUP BY val
+            ORDER BY val
+            LIMIT 100
+        """.format(field=field)
 
-    form_class = FeatureSearchForm
-    facet_fields = list(FACET_FIELDS.keys())
+        pk_list = list(pks[:10000])  # cap to avoid oversized IN clause
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [pk_list])
+            return [(row[0], row[1]) for row in cursor.fetchall()]
+
+
+class FeatureSearchExportView(ListView):
+    """Export search results in TSV or FASTA format."""
+
+    model = FeatureSearchIndex
     template_name = "search_result.out"
-    paginate_by = False
     context_object_name = "object_list"
+    paginate_by = None  # no pagination for exports
     content_type = "text"
 
-    def get_context_data(self, *args, **kwargs):
-        """Get context data."""
-        context = super(FeatureSearchExportView, self).get_context_data(*args, **kwargs)
+    def get_queryset(self):
+        """Build the filtered search queryset (unpaginated)."""
+        form = FeatureSearchForm(self.request.GET)
+        selected_facets = self.request.GET.getlist("selected_facets")
 
-        if self.get_form_kwargs()["data"].get("export") in ["tsv", "fasta"]:
-            file_format = self.get_form_kwargs()["data"].get("export")
+        if form.is_valid():
+            qs = form.search(selected_facets=selected_facets)
         else:
-            file_format = "tsv"
+            qs = FeatureSearchIndex.objects.none()
 
-        self.file_format = file_format
-        context["file_format"] = file_format
+        order_by = self.request.GET.get("order_by", "uniquename")
+        return qs.order_by(order_by)
 
+    def get_context_data(self, **kwargs):
+        """Add export format to context."""
+        context = super().get_context_data(**kwargs)
+        export_format = self.request.GET.get("export", "tsv")
+        if export_format not in ("tsv", "fasta"):
+            export_format = "tsv"
+        self.file_format = export_format
+        context["file_format"] = export_format
         return context
 
     def dispatch(self, *args, **kwargs):
-        """Dispatch."""
-        response = super(FeatureSearchExportView, self).dispatch(*args, **kwargs)
+        """Set Content-Disposition header for download."""
+        response = super().dispatch(*args, **kwargs)
         filename = "machado_search_results.{}".format(self.file_format)
         response["Content-Disposition"] = 'attachment; filename="{}"'.format(filename)
         return response

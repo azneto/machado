@@ -17,39 +17,30 @@ try:
 except AttributeError:
     CACHE_TIMEOUT = 60 * 60
 
-if "haystack" in settings.INSTALLED_APPS:
-    from machado.views import feature, search
+from machado.views import feature, search
 
-    urlpatterns = [
-        re_path(r"api/", include("machado.api.urls"), name="api"),
-        re_path(r"account/", include("machado.account.urls"), name="account"),
-        re_path(
-            r"feature/",
-            cache_page(CACHE_TIMEOUT)(feature.FeatureView.as_view()),
-            name="feature",
-        ),
-        re_path(
-            r"data/",
-            cache_page(CACHE_TIMEOUT)(common.DataSummaryView.as_view()),
-            name="data_numbers",
-        ),
-        re_path(
-            r"find/",
-            cache_page(CACHE_TIMEOUT)(search.FeatureSearchView.as_view()),
-            name="feature_search",
-        ),
-        re_path(
-            r"export/",
-            cache_page(CACHE_TIMEOUT)(search.FeatureSearchExportView.as_view()),
-            name="feature_search_export",
-        ),
-        re_path(
-            r"^$", cache_page(CACHE_TIMEOUT)(common.HomeView.as_view()), name="home"
-        ),
-    ]
-else:
-    urlpatterns = [
-        re_path(
-            r"^$", cache_page(CACHE_TIMEOUT)(common.CongratsView.as_view()), name="home"
-        )
-    ]
+urlpatterns = [
+    re_path(r"api/", include("machado.api.urls"), name="api"),
+    re_path(r"account/", include("machado.account.urls"), name="account"),
+    re_path(
+        r"feature/",
+        cache_page(CACHE_TIMEOUT)(feature.FeatureView.as_view()),
+        name="feature",
+    ),
+    re_path(
+        r"data/",
+        cache_page(CACHE_TIMEOUT)(common.DataSummaryView.as_view()),
+        name="data_numbers",
+    ),
+    re_path(
+        r"find/",
+        cache_page(CACHE_TIMEOUT)(search.FeatureSearchView.as_view()),
+        name="feature_search",
+    ),
+    re_path(
+        r"export/",
+        cache_page(CACHE_TIMEOUT)(search.FeatureSearchExportView.as_view()),
+        name="feature_search_export",
+    ),
+    re_path(r"^$", cache_page(CACHE_TIMEOUT)(common.HomeView.as_view()), name="home"),
+]
