@@ -7,7 +7,9 @@
 
 from django import forms
 from django.contrib.postgres.search import SearchQuery, SearchRank
-from django.db.models import Q
+from django.db.models import Q, Value
+from django.db.models.functions import Cast
+from django.db import models
 
 from machado.models import FeatureSearchIndex
 
@@ -40,10 +42,32 @@ class FeatureSearchForm(forms.Form):
 
         # ── Apply full-text query ────────────────────────────────────────
         if q:
-            query = SearchQuery(q, config="english", search_type="websearch")
-            qs = qs.filter(search_vector=query).annotate(
+            # Save the faceted queryset to use in fallback if FTS fails
+            base_qs = qs
+
+            if "*" in q:
+                # Handle wildcard search: "abc*" -> "abc:*"
+                terms = [f"{t[:-1]}:*" if t.endswith("*") else t for t in q.split()]
+                query = SearchQuery(" & ".join(terms), config="english", search_type="raw")
+            else:
+                # Standard websearch (supports quotes, +, -)
+                query = SearchQuery(q, config="english", search_type="websearch")
+
+            qs = base_qs.filter(search_vector=query).annotate(
                 rank=SearchRank("search_vector", query)
             )
+
+            # Substring fallback: if no FTS results, try partial matching on key fields
+            if not qs.exists():
+                clean_q = q.replace("*", "")
+                qs = (
+                    base_qs.filter(
+                        Q(uniquename__icontains=clean_q)
+                        | Q(name__icontains=clean_q)
+                        | Q(display__icontains=clean_q)
+                    )
+                    .annotate(rank=Value(0.0, output_field=models.FloatField()))
+                )
 
         return qs
 
