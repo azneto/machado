@@ -955,13 +955,18 @@ class FeatureSimilarityViewSet(viewsets.GenericViewSet):
         try:
             match_parts_ids = Featureloc.objects.filter(
                 srcfeature_id=srcfeature_id
-            ).values_list("feature_id")
+            ).values_list("feature_id", flat=True)
         except ObjectDoesNotExist:
             return list()
 
         for match_part_id in match_parts_ids:
-            analysis_feature = Analysisfeature.objects.get(feature_id=match_part_id)
-            analysis = Analysis.objects.get(analysis_id=analysis_feature.analysis_id)
+            try:
+                analysis_feature = Analysisfeature.objects.get(feature_id=match_part_id)
+                analysis = Analysis.objects.get(
+                    analysis_id=analysis_feature.analysis_id
+                )
+            except ObjectDoesNotExist:
+                continue
             if analysis_feature.normscore is not None:
                 score = analysis_feature.normscore
             else:
