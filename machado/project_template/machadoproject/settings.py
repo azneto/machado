@@ -100,6 +100,9 @@ WSGI_APPLICATION = "machadoproject.wsgi.application"
 MACHADO_VALID_TYPES = env.list(
     "MACHADO_VALID_TYPES", default=["gene", "mRNA", "polypeptide"]
 )
+MACHADO_OVERLAPPING_FEATURES = env.list(
+    "MACHADO_OVERLAPPING_FEATURES", default=["SNV", "QTL", "copy_number_variation"]
+)
 
 if env("MACHADO_JBROWSE_URL", default=None):
     MACHADO_JBROWSE_URL = env("MACHADO_JBROWSE_URL")

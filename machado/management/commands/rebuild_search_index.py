@@ -35,7 +35,6 @@ from machado.models import (
 from machado.models import FeatureSearchIndex
 
 VALID_PROGRAMS = ["interproscan", "diamond", "blast"]
-OVERLAPPING_FEATURES = ["SNV", "QTL", "copy_number_variation"]
 
 
 class Command(BaseCommand):
@@ -64,9 +63,15 @@ class Command(BaseCommand):
             self.stderr.write("MACHADO_VALID_TYPES is not set in settings. Aborting.")
             return
 
+        overlapping_features = getattr(
+            settings,
+            "MACHADO_OVERLAPPING_FEATURES",
+            ["SNV", "QTL", "copy_number_variation"],
+        )
+
         # ── Pre-compute shared lookups ───────────────────────────────────
         has_overlapping = Feature.objects.filter(
-            type__name__in=OVERLAPPING_FEATURES
+            type__name__in=overlapping_features
         ).exists()
 
         valid_programs = list(
@@ -104,7 +109,9 @@ class Command(BaseCommand):
         )
 
         for obj in iterator:
-            entry = self._build_entry(obj, valid_programs, has_overlapping, valid_types)
+            entry = self._build_entry(
+                obj, valid_programs, has_overlapping, valid_types, overlapping_features
+            )
             batch.append(entry)
 
             if len(batch) >= batch_size:
@@ -125,10 +132,14 @@ class Command(BaseCommand):
 
     # ── Field preparation (ported from old search_indexes.py) ────────────
 
-    def _build_entry(self, obj, valid_programs, has_overlapping, valid_types):
+    def _build_entry(
+        self, obj, valid_programs, has_overlapping, valid_types, overlapping_features
+    ):
         """Build a FeatureSearchIndex instance for a single Feature."""
         organism = self._prepare_organism(obj)
-        text = self._prepare_text(obj, has_overlapping, valid_types)
+        text = self._prepare_text(
+            obj, has_overlapping, valid_types, overlapping_features
+        )
         autocomplete = "{} {}".format(organism, text)
 
         return FeatureSearchIndex(
@@ -160,7 +171,7 @@ class Command(BaseCommand):
         return organism
 
     @staticmethod
-    def _prepare_text(obj, has_overlapping, valid_types):
+    def _prepare_text(obj, has_overlapping, valid_types, overlapping_features):
         """Aggregate all searchable text."""
         keywords = set()
 
@@ -208,7 +219,7 @@ class Command(BaseCommand):
                     for overlapping in Featureloc.objects.filter(
                         ~Q(feature__type__name=location.feature.type.name),
                         srcfeature=location.srcfeature,
-                        feature__type__name__in=OVERLAPPING_FEATURES,
+                        feature__type__name__in=overlapping_features,
                         fmin__lte=location.fmax,
                         fmax__gte=location.fmin,
                     ):
