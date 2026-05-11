@@ -3,6 +3,8 @@
 # This code is part of the machado distribution and governed by its
 # license. Please see the LICENSE.txt and README.md files that should
 # have been included as part of this package for licensing information.
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 from django.utils import timezone
 
@@ -4347,3 +4349,58 @@ class History(models.Model):
         self.exit_code = 1
         self.finished_at = timezone.now()
         self.save()
+
+
+class FeatureSearchIndex(models.Model):
+    """Pre-computed search data for Feature full-text search and faceting."""
+
+    feature = models.OneToOneField(
+        "machado.Feature",
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="search_index",
+    )
+
+    # ── Full-text search ─────────────────────────────────────────────────
+    search_vector = SearchVectorField(null=True)
+    autocomplete_text = models.TextField(default="")
+
+    # ── Scalar facet fields (denormalized for fast filtering) ────────────
+    organism = models.CharField(max_length=512, default="")
+    so_term = models.CharField(max_length=128, default="")
+    uniquename = models.CharField(max_length=1024, default="")
+    name = models.CharField(max_length=1024, null=True, blank=True)
+    display = models.CharField(max_length=4096, null=True, blank=True)
+
+    # ── Multi-value facets stored as JSON arrays ─────────────────────────
+    analyses = models.JSONField(default=list)
+    doi = models.JSONField(default=list)
+    biomaterial = models.JSONField(default=list)
+    treatment = models.JSONField(default=list)
+
+    # ── Boolean / group facets ───────────────────────────────────────────
+    orthology = models.BooleanField(default=False)
+    orthologous_group = models.CharField(max_length=255, null=True, blank=True)
+    coexpression = models.BooleanField(default=False)
+    coexpression_group = models.CharField(max_length=255, null=True, blank=True)
+
+    # ── Relationships (JSON array of "feature_id type_name" strings) ─────
+    relationships = models.JSONField(default=list)
+
+    # ── Orthologs coexpression (multi-value facet) ───────────────────────
+    orthologs_coexpression = models.JSONField(default=list)
+
+    class Meta:
+        managed = True
+        db_table = "machado_featuresearchindex"
+        indexes = [
+            GinIndex(fields=["search_vector"], name="fsi_search_gin"),
+            models.Index(fields=["organism"], name="fsi_organism_idx"),
+            models.Index(fields=["so_term"], name="fsi_so_term_idx"),
+            models.Index(fields=["uniquename"], name="fsi_uniquename_idx"),
+            models.Index(fields=["orthologous_group"], name="fsi_ortho_grp_idx"),
+            models.Index(fields=["coexpression_group"], name="fsi_coexp_grp_idx"),
+        ]
+
+    def __str__(self):
+        return f"SearchIndex({self.uniquename})"

@@ -1,7 +1,7 @@
-{% if file_format == 'tsv' %}Organism   SO term	Feature ID	Display	Group
+{% if file_format == 'tsv' %}Organism	SO term	Feature ID	Display	Group
 {% for result in object_list %}{{ result.organism }}	{{ result.so_term }}	{{ result.uniquename }}	{{ result.display|default_if_none:'' }}	{% if result.so_term == 'polypeptide' %}{{ result.orthologous_group|default_if_none:'' }}{% elif result.so_term == 'mRNA' %}{{ result.coexpression_group|default_if_none:'' }}{% endif %}
 {% endfor %}
-{% elif file_format == 'fasta' %}{% for result in object_list %}{% if result.object.residues %}>{{ result.object.dbxref.accession }} {{ result.display|default_if_none:'' }}
-{{ result.object.residues }}
+{% elif file_format == 'fasta' %}{% for result in object_list %}{% if result.feature.residues %}>{{ result.feature.dbxref.accession }} {{ result.display|default_if_none:'' }}
+{{ result.feature.residues }}
 {% endif %}{% endfor %}
 {% else %}Unknown format.{% endif %}

@@ -40,20 +40,11 @@ INSTALLED_APPS = [
     "machado",
 ]
 
-# Conditionally enable Haystack / Elasticsearch
-if env("ELASTICSEARCH_URL", default=None):
-    INSTALLED_APPS.append("haystack")
-    HAYSTACK_CONNECTIONS = {
-        "default": {
-            "ENGINE": "haystack.backends.elasticsearch7_backend.Elasticsearch7SearchEngine",
-            "URL": env("ELASTICSEARCH_URL"),
-            "INDEX_NAME": env("HAYSTACK_INDEX_NAME", default="haystack"),
-        },
-    }
 
 # ── Middleware ───────────────────────────────────────────────────────────────
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -92,6 +83,12 @@ USE_I18N = True
 
 # ── Static files ─────────────────────────────────────────────────────────────
 STATIC_URL = "/static/"
+STATIC_ROOT = env("STATIC_ROOT", default=str(BASE_DIR / "staticfiles"))
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # ── Default primary key ─────────────────────────────────────────────────────
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

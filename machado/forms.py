@@ -3,54 +3,71 @@
 # This code is part of the machado distribution and governed by its
 # license. Please see the LICENSE.txt and README.md files that should
 # have been included as part of this package for licensing information.
-"""Search forms."""
+"""Search forms — PostgreSQL full-text search."""
 
-from haystack.forms import FacetedSearchForm
-from haystack.inputs import Exact, Raw
-from haystack.query import SQ
+from django import forms
+from django.contrib.postgres.search import SearchQuery, SearchRank
+from django.db.models import Q
+
+from machado.models import FeatureSearchIndex
+
+# Facets that are stored as JSON arrays (need __contains lookups)
+_ARRAY_FACETS = {
+    "analyses",
+    "biomaterial",
+    "treatment",
+    "doi",
+    "orthologs_coexpression",
+}
+
+# The "analyses" facet uses AND logic; all others use OR.
+_AND_FACETS = {"analyses"}
 
 
-class FeatureSearchForm(FacetedSearchForm):
-    """Search form."""
+class FeatureSearchForm(forms.Form):
+    """Search form backed by PostgreSQL full-text search."""
 
-    def search(self):
-        """Search."""
-        q = self.cleaned_data.get("q")
-        sqs = self.searchqueryset
+    q = forms.CharField(required=False)
 
-        if not self.is_valid():
-            return self.no_query_found()
+    def search(self, selected_facets=None):
+        """Return a filtered queryset of FeatureSearchIndex rows."""
+        qs = FeatureSearchIndex.objects.select_related("feature").all()
+        q = self.cleaned_data.get("q", "").strip()
 
-        selected_facets = dict()
-        if "selected_facets" in self.data:
-            for facet in self.data.getlist("selected_facets"):
-                facet_field, facet_query = facet.split(":", 1)
-                selected_facets.setdefault(facet_field, []).append(facet_query)
+        # ── Apply facet filters ──────────────────────────────────────────
+        if selected_facets:
+            qs = self._apply_facets(qs, selected_facets)
 
-            and_facets = ["analyses"]
+        # ── Apply full-text query ────────────────────────────────────────
+        if q:
+            query = SearchQuery(q, config="english", search_type="websearch")
+            qs = qs.filter(search_vector=query).annotate(
+                rank=SearchRank("search_vector", query)
+            )
 
-            # the results of these facets will be united (union/or)
-            for key, values in selected_facets.items():
-                if key not in and_facets:
-                    key += "_exact__in"
-                    sqs &= self.searchqueryset.filter(**{key: values})
+        return qs
 
-            # the results of these facets will be intersected (intersect/and)
-            for key, values in selected_facets.items():
-                if key in and_facets:
-                    queries = [SQ(analyses_exact=Exact(value)) for value in values]
-                    query = queries.pop()
-                    for item in queries:
-                        query &= item
-                    sqs = sqs.filter(query)
+    @staticmethod
+    def _apply_facets(qs, selected_facets):
+        """Apply facet filters with AND for 'analyses', OR for others."""
+        grouped = {}
+        for facet_str in selected_facets:
+            field, value = facet_str.split(":", 1)
+            grouped.setdefault(field, []).append(value)
 
-        # escape : because of GO terms
-        q = q.replace(":", "\\:")
-        q = q.replace("/", "\\/")
-        q = q.replace(".", "\\.")
-        q = q.replace('"', '\\"')
+        for field, values in grouped.items():
+            if field in _AND_FACETS:
+                # AND logic: every selected value must be present
+                for v in values:
+                    qs = qs.filter(**{f"{field}__contains": [v]})
+            elif field in _ARRAY_FACETS:
+                # OR logic for array fields
+                q_obj = Q()
+                for v in values:
+                    q_obj |= Q(**{f"{field}__contains": [v]})
+                qs = qs.filter(q_obj)
+            else:
+                # Scalar fields — OR via __in
+                qs = qs.filter(**{f"{field}__in": values})
 
-        if q == "":
-            return sqs
-        else:
-            return sqs.filter(text=Raw(q))
+        return qs

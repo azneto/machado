@@ -109,25 +109,6 @@ python manage.py runserver
 
 Open `http://localhost:8000/` in your browser.
 
-## Optional: Elasticsearch
-
-To enable full-text search, install Elasticsearch 7.x and add the Python client:
-
-```bash
-pip install 'elasticsearch>=7,<8'
-```
-
-Then uncomment `ELASTICSEARCH_URL` in `.env`:
-
-```bash
-ELASTICSEARCH_URL=http://127.0.0.1:9200/
-```
-
-Rebuild the search index after loading data:
-
-```bash
-python manage.py rebuild_index
-```
 
 ## References
 

@@ -18,7 +18,7 @@ This specification is supplemented by in-depth reference files for each major su
 | [01-database-models.md](01-database-models.md) | §4 | All Chado ORM models, field details, decorator-injected methods |
 | [02-data-loaders.md](02-data-loaders.md) | §5 | Loader library internals, management command arguments, loading order |
 | [03-rest-api.md](03-rest-api.md) | §6–§7 | All REST endpoints with request/response examples |
-| [04-search-indexing.md](04-search-indexing.md) | §8 | Elasticsearch index fields, faceted search logic, query processing |
+| [04-search-indexing.md](04-search-indexing.md) | §8 | PostgreSQL full-text search, materialized index, querying |
 | [05-web-interface.md](05-web-interface.md) | §9–§10 | Views, templates, JavaScript, template tags, auto-patching |
 | [06-testing-cicd-deployment.md](06-testing-cicd-deployment.md) | §11–§14 | Test suite, CI pipeline, deployment, configuration reference |
 
@@ -30,7 +30,7 @@ Machado is a **Django application** that provides a Python/web interface to a **
 
 - CLI-based data loaders for standard bioinformatics file formats
 - A REST API serving data to the JBrowse genome browser
-- Full-text search powered by Haystack + Elasticsearch
+- Full-text search powered by PostgreSQL GIN indexes
 - A web UI with faceted search, feature detail pages, and data summaries
 - User authentication and management via token-based auth
 
@@ -49,7 +49,7 @@ The database schema is **unmanaged** (`managed = False`) — Machado maps Django
 | REST API | Django REST Framework 3.15.x |
 | API Docs | drf-yasg 1.21.8 (Swagger/OpenAPI) |
 | Nested Routes | drf-nested-routers 0.94.x |
-| Search | django-haystack 3.3.x + Elasticsearch 7.17 |
+| Search | PostgreSQL `tsvector` + GIN indexes |
 | Bioinformatics | BioPython 1.84, pysam 0.22.x, obonet 1.1.x |
 | Ontology Graphs | NetworkX 3.3 |
 | Bibliography | bibtexparser 1.4.x |
@@ -80,7 +80,7 @@ azneto-machado/
 │   ├── decorators.py              # Feature/Pub method injectors
 │   ├── forms.py                   # Haystack faceted search form
 │   ├── urls.py                    # Root URL routing
-│   ├── search_indexes.py          # Elasticsearch index definition
+│   ├── search_models.py           # PostgreSQL materialized search index model
 │   ├── account/                   # User auth module (login/logout/CRUD)
 │   ├── api/                       # REST API (serializers, views, urls)
 │   ├── loaders/                   # Data import modules (16 files)
@@ -369,10 +369,10 @@ Token-based authentication using DRF's `TokenAuthentication`.
 
 ### 8.2 Search Form (`forms.py`)
 
-`FeatureSearchForm` extends Haystack's `FacetedSearchForm`:
-- Union (OR) logic for most facets
+`FeatureSearchForm` extends Django's base Form:
+- Union (OR) logic for array and scalar facets
 - Intersection (AND) logic for `analyses` facet
-- Escapes special characters (`:`, `/`, `.`, `"`) for Elasticsearch compatibility
+- Uses PostgreSQL `SearchQuery` with `websearch` config
 
 ### 8.3 Faceted Search View
 
@@ -459,17 +459,7 @@ DATABASES = {
 }
 ```
 
-### 10.5 Elasticsearch Configuration
 
-```python
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'haystack.backends.elasticsearch7_backend.Elasticsearch7SearchEngine',
-        'URL': 'http://127.0.0.1:9200/',
-        'INDEX_NAME': 'haystack',
-    },
-}
-```
 
 ---
 
@@ -565,9 +555,8 @@ Pre-built Docker setup available: https://github.com/lmb-embrapa/machado-docker
 ### 14.3 Prerequisites
 
 1. PostgreSQL with Chado schema loaded (`schemas/1.31/default_schema.sql`)
-2. Elasticsearch 7.17 running
-3. Django project with `machado` in `INSTALLED_APPS`
-4. `MACHADO_VALID_TYPES` configured
+2. Django project with `machado` in `INSTALLED_APPS`
+3. `MACHADO_VALID_TYPES` configured
 
 ---
 

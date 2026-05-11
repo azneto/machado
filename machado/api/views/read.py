@@ -15,7 +15,7 @@ from django.core.paginator import Paginator
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
-from haystack.query import SearchQuerySet
+from machado.models import FeatureSearchIndex
 
 from rest_framework import viewsets, status
 from rest_framework.pagination import PageNumberPagination
@@ -303,7 +303,7 @@ class autocompleteViewSet(viewsets.GenericViewSet):
         type=openapi.TYPE_STRING,
     )
 
-    operation_summary = "Search the ElasticSearch index for matching strings"
+    operation_summary = "Search for matching strings (autocomplete)"
     operation_description = operation_summary + "<br /><br />"
     if hasattr(settings, "MACHADO_EXAMPLE_TXT"):
         operation_description += "<b>Example:</b><br />feature_id={}".format(
@@ -317,7 +317,7 @@ class autocompleteViewSet(viewsets.GenericViewSet):
     )
     @method_decorator(cache_page(CACHE_TIMEOUT))
     def list(self, request):
-        """Search the ElasticSearch index for matching strings."""
+        """Search for matching strings (autocomplete)."""
         queryset = self.get_queryset()
         serializer = readSerializers.autocompleteSerializer(queryset, many=True)
         return Response(serializer.data)
@@ -329,14 +329,18 @@ class autocompleteViewSet(viewsets.GenericViewSet):
         query = request.query_params.get("q")
         if query is not None:
             query = query.strip()
-            queryset = SearchQuerySet().filter(autocomplete=query)[: max_items * 10]
+            queryset = FeatureSearchIndex.objects.filter(
+                autocomplete_text__icontains=query
+            )[: max_items * 10]
             result = set()
             for item in queryset:
                 try:
                     aux = list()
                     for i in query.split(" "):
                         regex = r"\w*" + escape(i) + r"\w*"
-                        aux.append(search(regex, item.autocomplete, IGNORECASE).group())
+                        aux.append(
+                            search(regex, item.autocomplete_text, IGNORECASE).group()
+                        )
                     result.add(" ".join(aux))
                 except AttributeError:
                     pass

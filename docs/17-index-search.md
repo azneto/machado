@@ -1,74 +1,41 @@
 # Index and Search
 
-## Haystack
+## PostgreSQL Full-Text Search
 
-The [Haystack](https://haystacksearch.org) software enables the Django framework to run third party search engines such as Elasticsearch and Solr. Even though you can use any search engine supported by Haystack, machado was tested using [Elasticsearch](https://www.elastic.co/products/elasticsearch).
+Machado uses the native **full-text search capabilities of PostgreSQL** to provide fast, reliable search and faceted navigation without requiring any external search services. All search indexes are stored within the main database.
 
-## Install Elasticsearch
 
-Elasticsearch 7.x is required. Install Java first:
-
-```bash
-sudo apt install openjdk-11-jdk
-```
-
-Then install Elasticsearch:
-
-```bash
-wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.17.26-amd64.deb
-sudo dpkg -i elasticsearch-7.17.26-amd64.deb
-sudo systemctl daemon-reload
-sudo systemctl enable elasticsearch.service
-sudo systemctl start elasticsearch.service
-```
-
-Install the Python client inside your virtualenv:
-
-```bash
-pip install 'elasticsearch>=7,<8'
-```
-
-## Enable Search in machado
-
-Uncomment the Elasticsearch settings in your `.env` file:
-
-```bash
-ELASTICSEARCH_URL=http://127.0.0.1:9200/
-HAYSTACK_INDEX_NAME=haystack
-```
-
-When `ELASTICSEARCH_URL` is set, machado automatically adds `haystack` to `INSTALLED_APPS` and configures `HAYSTACK_CONNECTIONS` — no manual editing of `settings.py` is needed.
-
-You can also configure which feature types are indexed:
 
 ```bash
 MACHADO_VALID_TYPES=gene,mRNA,polypeptide
 ```
 
-If `MACHADO_VALID_TYPES` is not set, the default is `gene,mRNA,polypeptide`.
+If `MACHADO_VALID_TYPES` is not explicitly set in the settings, the default is `['gene', 'mRNA', 'polypeptide']`.
 
 ## Indexing the Data
 
-After loading data into the database, build the search index:
+The search system relies on a denormalized "materialized" index table to guarantee fast responses. After loading data into the Chado database, you must build the search index to make the new records searchable:
 
 ```bash
-python manage.py rebuild_index
+python manage.py rebuild_search_index
 ```
 
-> **Note:** It is necessary to run `rebuild_index` whenever additional data is loaded into the database or when search-related settings change.
+> **Note:** It is necessary to run `rebuild_search_index` whenever additional data is loaded into the database or when you wish to refresh the search facets.
 
-Rebuilding the index can be faster if you increase the number of workers:
+Rebuilding the index queries the underlying database tables and batch-inserts the records into the search index. You can control the batch size to tune performance:
 
 ```bash
-python manage.py rebuild_index -k 4
+# Process 5,000 records at a time
+python manage.py rebuild_search_index --batch-size 5000
 ```
 
-## Increasing the Results Limit
+## Search Features
 
-The Elasticsearch server has a 10,000 results limit by default. In most cases it will not affect the results since they are paginated. The links to export `.tsv` or `.fasta` files might be truncated because of this limit. You can increase it with:
+The PostgreSQL search backend supports advanced search queries natively using "websearch" syntax:
 
-```bash
-curl -XPUT "http://localhost:9200/haystack/_settings" \
-     -d '{ "index" : { "max_result_window" : 500000 } }' \
-     -H "Content-Type: application/json"
-```
+* `gene kinase` — searches for documents containing both words
+* `"receptor kinase"` — searches for the exact phrase
+* `kinase -receptor` — searches for "kinase" but excludes documents containing "receptor"
+* `kinase OR receptor` — searches for either word
+
+All exported data (TSV or FASTA) from the search page is unlimited; PostgreSQL handles exporting the full result set regardless of its size.

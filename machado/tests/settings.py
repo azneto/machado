@@ -41,10 +41,5 @@ STATIC_URL = "/static/"
 MACHADO_JBROWSE_URL = "http://localhost/jbrowse"
 MACHADO_JBROWSE_OFFSET = 1200
 
-HAYSTACK_CONNECTIONS = {
-    "default": {
-        "ENGINE": "haystack.backends.simple_backend.SimpleEngine",
-    }
-}
 
 MACHADO_VALID_TYPES = ["gene", "mRNA", "polypeptide"]

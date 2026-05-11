@@ -236,7 +236,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'drf_yasg',
-    'haystack',
     'machado',
 ]
 
@@ -252,14 +251,7 @@ DATABASES = {
     }
 }
 
-# Elasticsearch
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'haystack.backends.elasticsearch7_backend.Elasticsearch7SearchEngine',
-        'URL': 'http://127.0.0.1:9200/',
-        'INDEX_NAME': 'machado',
-    },
-}
+
 
 # Machado-specific settings
 MACHADO_VALID_TYPES = ['gene', 'mRNA', 'polypeptide']

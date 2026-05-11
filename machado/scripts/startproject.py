@@ -24,11 +24,9 @@ DATABASE_URL=postgres://username:password@localhost:5432/yourdatabase
 # ── Django ───────────────────────────────────────────────────────────────────
 # DEBUG=True
 # ALLOWED_HOSTS=localhost,127.0.0.1
+# STATIC_ROOT=staticfiles
 
-# ── Elasticsearch / Haystack (optional) ──────────────────────────────────────
-# Uncomment to enable full-text search. Requires a running Elasticsearch 7.x.
-# ELASTICSEARCH_URL=http://127.0.0.1:9200/
-# HAYSTACK_INDEX_NAME=haystack
+
 
 # ── JBrowse integration (optional) ───────────────────────────────────────────
 # MACHADO_JBROWSE_URL=http://localhost/jbrowse
@@ -157,7 +155,7 @@ def main():
     4. python manage.py runserver
 
   Optional:
-    • Enable Elasticsearch by uncommenting ELASTICSEARCH_URL in .env
+    • Run 'python manage.py rebuild_search_index' after loading data
     • See .env.example for all available settings
 """)
 
