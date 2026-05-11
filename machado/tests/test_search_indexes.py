@@ -115,7 +115,9 @@ class RebuildSearchIndexHelpersTest(TestCase):
 
         mock_fr_filter.return_value = []
 
-        text = self.cmd._prepare_text(feature, False, ["gene"])
+        text = self.cmd._prepare_text(
+            feature, False, ["gene"], ["SNV", "QTL", "copy_number_variation"]
+        )
         self.assertIn("Display Name", text)
         self.assertIn("ACC123", text)
         self.assertIn("GO:000123", text)
@@ -128,7 +130,9 @@ class RebuildSearchIndexHelpersTest(TestCase):
         mock_fr.subject.uniquename = "PROT1"
         mock_fr.subject.name = "Protein 1"
         mock_fr_filter.return_value = [mock_fr]
-        text = self.cmd._prepare_text(feature, False, ["gene"])
+        text = self.cmd._prepare_text(
+            feature, False, ["gene"], ["SNV", "QTL", "copy_number_variation"]
+        )
         self.assertIn("PROT1", text)
         self.assertIn("Protein 1", text)
 
@@ -141,7 +145,9 @@ class RebuildSearchIndexHelpersTest(TestCase):
                 "treatment_name": "treat name",
             }
         ]
-        text = self.cmd._prepare_text(feature, False, ["gene"])
+        text = self.cmd._prepare_text(
+            feature, False, ["gene"], ["SNV", "QTL", "copy_number_variation"]
+        )
         self.assertIn("assay1", text)
         self.assertIn("bio1", text)
         self.assertIn("desc", text)
@@ -149,12 +155,16 @@ class RebuildSearchIndexHelpersTest(TestCase):
 
         # Test no name
         feature.name = None
-        text = self.cmd._prepare_text(feature, False, ["gene"])
+        text = self.cmd._prepare_text(
+            feature, False, ["gene"], ["SNV", "QTL", "copy_number_variation"]
+        )
         self.assertNotIn("None", text)
 
         # Test no display
         feature.get_display.return_value = None
-        text = self.cmd._prepare_text(feature, False, ["gene"])
+        text = self.cmd._prepare_text(
+            feature, False, ["gene"], ["SNV", "QTL", "copy_number_variation"]
+        )
 
     def test_prepare_doi(self):
         """Test prepare doi."""
