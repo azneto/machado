@@ -73,10 +73,16 @@ def get_feature_annotation(self):
         )
         annotations = list()
         for fp in fps:
-            try:
-                doi = fp.FeaturepropPub_featureprop_Featureprop.get().pub.get_doi()
-                annotations.append("{} (DOI:{})".format(fp.value, doi))
-            except ObjectDoesNotExist:
+            fppubs = fp.FeaturepropPub_featureprop_Featureprop.all()
+            dois = []
+            for fppub in fppubs:
+                doi = fppub.pub.get_doi()
+                if doi:
+                    dois.append(doi)
+
+            if dois:
+                annotations.append("{} (DOI:{})".format(fp.value, ", ".join(dois)))
+            else:
                 annotations.append(fp.value)
         return annotations
     except ObjectDoesNotExist:
@@ -88,17 +94,18 @@ def get_feature_doi(self):
     dois = set()
     pubs = self.FeaturePub_feature_Feature.filter()
     for featurepub in pubs:
-        dois.add(featurepub.pub.get_doi())
+        doi = featurepub.pub.get_doi()
+        if doi:
+            dois.add(doi)
     try:
         fps = self.Featureprop_feature_Feature.filter(
             type__name="annotation", type__cv__name="feature_property"
         )
         for fp in fps:
-            try:
-                doi = fp.FeaturepropPub_featureprop_Featureprop.get().pub.get_doi()
-                dois.add(doi)
-            except ObjectDoesNotExist:
-                pass
+            for fppub in fp.FeaturepropPub_featureprop_Featureprop.all():
+                doi = fppub.pub.get_doi()
+                if doi:
+                    dois.add(doi)
         return dois
     except ObjectDoesNotExist:
         return None
@@ -325,10 +332,8 @@ def get_pub_authors(self):
 
 
 def get_pub_doi(self):
-    """Get a publication DOI."""
-    return (
-        self.PubDbxref_pub_Pub.filter(dbxref__db__name="DOI").first().dbxref.accession
-    )
+    pub_dbxref = self.PubDbxref_pub_Pub.filter(dbxref__db__name="DOI").first()
+    return pub_dbxref.dbxref.accession if pub_dbxref else None
 
 
 def machado_pub_methods():
