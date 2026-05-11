@@ -9,3 +9,4 @@ dist
 test_output.txt
 cov.txt
 .coverage
+.agent
