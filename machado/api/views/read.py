@@ -959,7 +959,9 @@ class FeatureSimilarityViewSet(viewsets.GenericViewSet):
         for match_part_id in match_parts_ids:
             try:
                 analysis_feature = Analysisfeature.objects.get(feature_id=match_part_id)
-                analysis = Analysis.objects.get(analysis_id=analysis_feature.analysis_id)
+                analysis = Analysis.objects.get(
+                    analysis_id=analysis_feature.analysis_id
+                )
             except ObjectDoesNotExist:
                 continue
             if analysis_feature.normscore is not None:
