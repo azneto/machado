@@ -952,9 +952,12 @@ class FeatureSimilarityViewSet(viewsets.GenericViewSet):
         """Get queryset."""
         result = list()
         srcfeature_id = self.kwargs.get("feature_id")
-        match_parts_ids = Featureloc.objects.filter(
-            srcfeature_id=srcfeature_id
-        ).values_list("feature_id", flat=True)
+        try:
+            match_parts_ids = Featureloc.objects.filter(
+                srcfeature_id=srcfeature_id
+            ).values_list("feature_id", flat=True)
+        except ObjectDoesNotExist:
+            return list()
 
         for match_part_id in match_parts_ids:
             try:
