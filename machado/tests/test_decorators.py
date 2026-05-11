@@ -128,9 +128,9 @@ class GetFeatureAnnotationTest(TestCase):
         """Test annotation with doi."""
         mock_fp = MagicMock()
         mock_fp.value = "Annotation text"
-        mock_fp.FeaturepropPub_featureprop_Featureprop.get.return_value.pub.get_doi.return_value = (
-            "10.1234/test"
-        )
+        mock_fppub = MagicMock()
+        mock_fppub.pub.get_doi.return_value = "10.1234/test"
+        mock_fp.FeaturepropPub_featureprop_Featureprop.all.return_value = [mock_fppub]
 
         mock_self = MagicMock()
         mock_self.Featureprop_feature_Feature.filter.return_value = [mock_fp]
@@ -143,9 +143,7 @@ class GetFeatureAnnotationTest(TestCase):
         """Test annotation without doi."""
         mock_fp = MagicMock()
         mock_fp.value = "Annotation text"
-        mock_fp.FeaturepropPub_featureprop_Featureprop.get.side_effect = (
-            ObjectDoesNotExist
-        )
+        mock_fp.FeaturepropPub_featureprop_Featureprop.all.return_value = []
 
         mock_self = MagicMock()
         mock_self.Featureprop_feature_Feature.filter.return_value = [mock_fp]
@@ -171,9 +169,9 @@ class GetFeatureDoiTest(TestCase):
         mock_featurepub.pub.get_doi.return_value = "10.1234/pub"
 
         mock_fp = MagicMock()
-        mock_fp.FeaturepropPub_featureprop_Featureprop.get.return_value.pub.get_doi.return_value = (
-            "10.1234/annot"
-        )
+        mock_fppub = MagicMock()
+        mock_fppub.pub.get_doi.return_value = "10.1234/annot"
+        mock_fp.FeaturepropPub_featureprop_Featureprop.all.return_value = [mock_fppub]
 
         mock_self = MagicMock()
         mock_self.FeaturePub_feature_Feature.filter.return_value = [mock_featurepub]
@@ -189,9 +187,7 @@ class GetFeatureDoiTest(TestCase):
         mock_featurepub.pub.get_doi.return_value = "10.1234/pub"
 
         mock_fp = MagicMock()
-        mock_fp.FeaturepropPub_featureprop_Featureprop.get.side_effect = (
-            ObjectDoesNotExist
-        )
+        mock_fp.FeaturepropPub_featureprop_Featureprop.all.return_value = []
 
         mock_self = MagicMock()
         mock_self.FeaturePub_feature_Feature.filter.return_value = [mock_featurepub]
