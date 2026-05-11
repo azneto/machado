@@ -8,7 +8,6 @@
 from django import forms
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import Q, Value
-from django.db.models.functions import Cast
 from django.db import models
 
 from machado.models import FeatureSearchIndex
@@ -48,7 +47,9 @@ class FeatureSearchForm(forms.Form):
             if "*" in q:
                 # Handle wildcard search: "abc*" -> "abc:*"
                 terms = [f"{t[:-1]}:*" if t.endswith("*") else t for t in q.split()]
-                query = SearchQuery(" & ".join(terms), config="english", search_type="raw")
+                query = SearchQuery(
+                    " & ".join(terms), config="english", search_type="raw"
+                )
             else:
                 # Standard websearch (supports quotes, +, -)
                 query = SearchQuery(q, config="english", search_type="websearch")
@@ -60,14 +61,11 @@ class FeatureSearchForm(forms.Form):
             # Substring fallback: if no FTS results, try partial matching on key fields
             if not qs.exists():
                 clean_q = q.replace("*", "")
-                qs = (
-                    base_qs.filter(
-                        Q(uniquename__icontains=clean_q)
-                        | Q(name__icontains=clean_q)
-                        | Q(display__icontains=clean_q)
-                    )
-                    .annotate(rank=Value(0.0, output_field=models.FloatField()))
-                )
+                qs = base_qs.filter(
+                    Q(uniquename__icontains=clean_q)
+                    | Q(name__icontains=clean_q)
+                    | Q(display__icontains=clean_q)
+                ).annotate(rank=Value(0.0, output_field=models.FloatField()))
 
         return qs
 
