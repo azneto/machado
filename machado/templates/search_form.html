@@ -1,11 +1,17 @@
 <form class="form-group" action="{% url 'feature_search' %}" method="get">
-  <div class="input-group mb-3">
-    <input type="text" placeholder="Search" class="form-control" name="q" id="q" value="{% if query %}{{ query }}{%endif%}">
+  <div class="input-group mb-0 position-relative">
+    <input type="text" placeholder="Search" class="form-control" name="q" id="q" 
+           value="{% if query %}{{ query }}{%endif%}"
+           hx-get="{% url 'autocomplete_html' %}"
+           hx-trigger="keyup changed delay:300ms"
+           hx-target="#search-results"
+           autocomplete="off">
     {% for facet in selected_facets %}
     <input type="hidden" name="selected_facets" value="{{ facet }}">
     {% endfor %}
     <div class="input-group-append">
       <button class="btn btn-light" type="submit"><em class="fas fa-search"></em></button>
     </div>
+    <div id="search-results" class="position-absolute w-100" style="top: 100%; left: 0; z-index: 1000;"></div>
   </div>
 </form>
