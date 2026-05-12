@@ -20,7 +20,11 @@ except AttributeError:
 from machado.views import feature, search, autocomplete
 
 urlpatterns = [
-    re_path(r"autocomplete/", autocomplete.AutocompleteView.as_view(), name="autocomplete_html"),
+    re_path(
+        r"autocomplete/",
+        autocomplete.AutocompleteView.as_view(),
+        name="autocomplete_html",
+    ),
     re_path(r"api/", include("machado.api.urls"), name="api"),
     re_path(r"account/", include("machado.account.urls"), name="account"),
     re_path(

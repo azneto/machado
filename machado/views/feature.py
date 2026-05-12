@@ -18,8 +18,6 @@ from machado.models import (
     Featureloc,
     FeatureCvterm,
     FeatureRelationship,
-    Analysis,
-    Analysisfeature,
 )
 from django.db.models import F, Value
 from django.db.models.functions import Concat
@@ -58,56 +56,73 @@ class FeatureView(View):
 
         # Similarity
         result["has_similarity"] = Featureloc.objects.filter(
-            srcfeature_id=feature_obj.feature_id,
-            feature__type__name__contains="match"
+            srcfeature_id=feature_obj.feature_id, feature__type__name__contains="match"
         ).exists()
-        
+
         if "similarity" in load_list:
             result["similarity_data"] = []
-            matches = Featureloc.objects.filter(
-                srcfeature_id=feature_obj.feature_id,
-                feature__type__name__contains="match"
-            ).select_related(
-                'feature'
-            ).prefetch_related(
-                'feature__Analysisfeature_feature_Feature',
-                'feature__Analysisfeature_feature_Feature__analysis'
+            matches = (
+                Featureloc.objects.filter(
+                    srcfeature_id=feature_obj.feature_id,
+                    feature__type__name__contains="match",
+                )
+                .select_related("feature")
+                .prefetch_related(
+                    "feature__Analysisfeature_feature_Feature",
+                    "feature__Analysisfeature_feature_Feature__analysis",
+                )
             )
-            
+
             for m in matches:
                 # Find the corresponding hit (the other featureloc for the same 'match' feature)
-                hit_loc = Featureloc.objects.filter(
-                    feature_id=m.feature_id
-                ).exclude(srcfeature_id=feature_obj.feature_id).select_related(
-                    'srcfeature', 
-                    'srcfeature__dbxref__db',
-                    'srcfeature__type'
-                ).first()
-                
+                hit_loc = (
+                    Featureloc.objects.filter(feature_id=m.feature_id)
+                    .exclude(srcfeature_id=feature_obj.feature_id)
+                    .select_related(
+                        "srcfeature", "srcfeature__dbxref__db", "srcfeature__type"
+                    )
+                    .first()
+                )
+
                 if not hit_loc:
                     continue
-                
+
                 # Get analysis data (stored on the 'match' feature)
                 try:
                     analysis_feat = m.feature.Analysisfeature_feature_Feature.first()
                 except AttributeError:
                     analysis_feat = None
-                
+
                 if not analysis_feat:
                     continue
-                    
-                result["similarity_data"].append({
-                    "program": analysis_feat.analysis.program,
-                    "programversion": analysis_feat.analysis.programversion,
-                    "db_name": hit_loc.srcfeature.dbxref.db.name if hit_loc.srcfeature.dbxref and hit_loc.srcfeature.dbxref.db else "N/A",
-                    "uniquename": hit_loc.srcfeature.uniquename,
-                    "name": hit_loc.srcfeature.name,
-                    "query_start": m.fmin,
-                    "query_end": m.fmax,
-                    "score": analysis_feat.normscore if analysis_feat.normscore is not None else analysis_feat.rawscore,
-                    "evalue": "{:.2e}".format(analysis_feat.significance) if analysis_feat.significance is not None else "N/A",
-                    "sotype": hit_loc.srcfeature.type.name,
-                })
+
+                result["similarity_data"].append(
+                    {
+                        "program": analysis_feat.analysis.program,
+                        "programversion": analysis_feat.analysis.programversion,
+                        "db_name": (
+                            hit_loc.srcfeature.dbxref.db.name
+                            if hit_loc.srcfeature.dbxref
+                            and hit_loc.srcfeature.dbxref.db
+                            else "N/A"
+                        ),
+                        "uniquename": hit_loc.srcfeature.uniquename,
+                        "name": hit_loc.srcfeature.name,
+                        "query_start": m.fmin,
+                        "query_end": m.fmax,
+                        "score": (
+                            analysis_feat.normscore
+                            if analysis_feat.normscore is not None
+                            else analysis_feat.rawscore
+                        ),
+                        "evalue": (
+                            "{:.2e}".format(analysis_feat.significance)
+                            if analysis_feat.significance is not None
+                            else "N/A"
+                        ),
+                        "sotype": hit_loc.srcfeature.type.name,
+                    }
+                )
 
         # Expression
         result["has_expression"] = (
