@@ -29,26 +29,26 @@ sudo apt install libapache2-mod-wsgi-py3
 Now configure Apache to use the WSGI module. Here is the configuration file (`/etc/apache2/sites-available/YOURPROJECT.conf`):
 
 ```apacheconf
-<Directory "/var/www/YOURPROJECT/WEBPROJECT">
+<Directory "/var/www/YOURPROJECT/machadoproject">
     <Files "wsgi.py">
         Require all granted
     </Files>
 </Directory>
 
-Alias /YOURPROJECT/static/ /var/www/YOURPROJECT/WEBPROJECT/static/
+Alias /YOURPROJECT/static/ /var/www/YOURPROJECT/staticfiles/
 
-<Directory "/var/www/YOURPROJECT/WEBPROJECT/static">
+<Directory "/var/www/YOURPROJECT/staticfiles">
     Require all granted
 </Directory>
 
-WSGIDaemonProcess WEBPROJECT lang='en_US.UTF-8' locale='en_US.UTF-8'
-WSGIPythonHome /var/www/YOURPROJECT
-WSGIPythonPath /var/www/YOURPROJECT
-WSGIScriptAlias /YOURPROJECT /var/www/YOURPROJECT/WEBPROJECT/wsgi.py
+WSGIDaemonProcess machadoproject python-home=/var/www/YOURPROJECT/.venv python-path=/var/www/YOURPROJECT lang='en_US.UTF-8' locale='en_US.UTF-8'
+WSGIProcessGroup machadoproject
+WSGIScriptAlias /YOURPROJECT /var/www/YOURPROJECT/machadoproject/wsgi.py
 ```
 
 - In this example the whole project is in `/var/www/YOURPROJECT`, but it's not required to be there.
 - This directory and sub-directories must have 755 permissions.
+- Ensure the `python-home` path matches your virtual environment (`.venv`).
 
 There must be a symlink of your config file in the sites-enabled directory:
 
@@ -56,24 +56,16 @@ There must be a symlink of your config file in the sites-enabled directory:
 sudo ln -s /etc/apache2/sites-available/YOURPROJECT.conf /etc/apache2/sites-enabled/YOURPROJECT.conf
 ```
 
-In the `WEBPROJECT/settings.py` file, set the following variables:
+In the `.env` file, ensure the following variables are set for production:
 
-```python
-ALLOWED_HOSTS = ['*']
-MACHADO_URL = 'http://localhost/YOURPROJECT'
+```bash
+DEBUG=False
+ALLOWED_HOSTS=*
 
-MACHADO_EXAMPLE_TXT = "kinase"
-MACHADO_EXAMPLE_AA_ACC = "AT1G01030.1"
-MACHADO_EXAMPLE_AA = 1869098
-MACHADO_EXAMPLE_NA = 1869093
-
-MACHADO_VALID_TYPES = ['gene', 'mRNA', 'polypeptide']
-
-STATIC_URL = '/YOURPROJECT/static/'
-STATIC_ROOT = '/var/www/YOURPROJECT/WEBPROJECT/static'
+MACHADO_VALID_TYPES=gene,mRNA,polypeptide
 ```
 
-Now, run `collectstatic` to gather the static files from all libraries to `STATIC_ROOT`:
+Now, run `collectstatic` to gather the static files from all libraries to the `staticfiles` directory:
 
 ```bash
 python manage.py collectstatic
@@ -85,4 +77,4 @@ It's necessary to restart the Apache2 service every time there are modifications
 sudo systemctl restart apache2.service
 ```
 
-Now, open your browser and go to <http://localhost/YOURPROJECT>.
+Now, open your browser and go to your configured domain (e.g., <http://yourdomain.com/YOURPROJECT>).

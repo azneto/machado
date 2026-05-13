@@ -36,14 +36,7 @@ DATABASE_URL=postgres://username:password@localhost:5432/yourdatabase
 # ── Feature types for search indexing (optional) ─────────────────────────────
 # MACHADO_VALID_TYPES=gene,mRNA,polypeptide
 
-# ── API example values (optional) ────────────────────────────────────────────
-# MACHADO_URL=
-# MACHADO_EXAMPLE_TXT=
-# MACHADO_EXAMPLE_ORGANISM_COMMON_NAME=
-# MACHADO_EXAMPLE_AA_ACC=
-# MACHADO_EXAMPLE_ORGANISM_ID=
-# MACHADO_EXAMPLE_AA=
-# MACHADO_EXAMPLE_NA=
+
 """
 
 

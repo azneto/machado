@@ -7,7 +7,7 @@
 """URLs."""
 
 from django.conf import settings
-from django.urls import include, re_path
+from django.urls import re_path
 from django.views.decorators.cache import cache_page
 
 from machado.views import common
@@ -17,7 +17,7 @@ try:
 except AttributeError:
     CACHE_TIMEOUT = 60 * 60
 
-from machado.views import feature, search, autocomplete
+from machado.views import feature, search, autocomplete, jbrowse
 
 urlpatterns = [
     re_path(
@@ -25,8 +25,18 @@ urlpatterns = [
         autocomplete.AutocompleteView.as_view(),
         name="autocomplete_html",
     ),
-    re_path(r"api/", include("machado.api.urls"), name="api"),
-    re_path(r"account/", include("machado.account.urls"), name="account"),
+    re_path(
+        r"^api/jbrowse/stats/global$", jbrowse.jbrowse_global, name="jbrowse_global"
+    ),
+    re_path(r"^api/jbrowse/names$", jbrowse.jbrowse_names, name="jbrowse_names"),
+    re_path(
+        r"^api/jbrowse/refSeqs.json$", jbrowse.jbrowse_refseqs, name="jbrowse_refseqs"
+    ),
+    re_path(
+        r"^api/jbrowse/features/(?P<refseq>.+)$",
+        jbrowse.jbrowse_features,
+        name="jbrowse_features",
+    ),
     re_path(
         r"feature/",
         cache_page(CACHE_TIMEOUT)(feature.FeatureView.as_view()),

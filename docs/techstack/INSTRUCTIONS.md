@@ -440,7 +440,6 @@ On app startup (`MachadoConfig.ready()`), Machado automatically patches Django s
 | `MACHADO_JBROWSE_URL` | str | — | JBrowse instance base URL |
 | `MACHADO_JBROWSE_TRACKS` | str | `"ref_seq,gene,transcripts,CDS"` | Default visible tracks |
 | `MACHADO_JBROWSE_OFFSET` | int | 1000 | Base pairs padding for JBrowse view |
-| `MACHADO_URL` | str | — | Public base URL for Swagger docs |
 
 ### 10.4 Database Configuration
 
