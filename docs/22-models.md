@@ -29,8 +29,8 @@ psql -h localhost -U username -W -d yourdatabase < chado-1.31/schemas/1.31/defau
 We strongly recommend creating a new virtualenv for your project:
 
 ```bash
-virtualenv -p /usr/bin/python3 YOURPROJECT
-cd YOURPROJECT
+virtualenv -p /usr/bin/python3 MYGENOME
+cd MYGENOME
 source bin/activate
 ```
 
@@ -45,7 +45,7 @@ python src/machado/setup.py install
 
 ## The Django Project
 
-Inside the `YOURPROJECT` directory, create a Django project with the following command:
+Inside the `MYGENOME` directory, create a Django project with the following command:
 
 ```bash
 django-admin startproject WEBPROJECT
