@@ -10,16 +10,16 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from django.core.management.base import BaseCommand, CommandError
+from machado.management.commands._base import HistoryCommandMixin
 from django.db.utils import IntegrityError
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator, retrieve_organism
 from machado.loaders.exceptions import ImportingError
 from machado.loaders.feature import FeatureLoader
-from machado.models import History
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     """Load feature publication file."""
 
     help = "Load two-column tab separated file containing feature name and "
@@ -57,8 +57,6 @@ class Command(BaseCommand):
         **options,
     ):
         """Execute the main function."""
-        history_obj = History()
-        history_obj.start(command="load_feature_publication", params=locals())
         if verbosity > 0:
             self.stdout.write("Preprocessing")
 
@@ -66,10 +64,8 @@ class Command(BaseCommand):
             FileValidator().validate(file)
             organism = retrieve_organism(organism)
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
         except IntegrityError as e:
-            history_obj.failure(description=str(e))
             raise ImportingError(e)
 
         # retrieve only the file name
@@ -80,7 +76,6 @@ class Command(BaseCommand):
                 filename=filename, source="PUBLICATION", organism=organism
             )
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
 
         pool = ThreadPoolExecutor(max_workers=cpu)
@@ -102,10 +97,8 @@ class Command(BaseCommand):
             try:
                 task.result()
             except ImportingError as e:
-                history_obj.failure(description=str(e))
                 raise CommandError(e)
         pool.shutdown()
 
-        history_obj.success(description="Done")
         if verbosity > 0:
             self.stdout.write(self.style.SUCCESS("Done"))

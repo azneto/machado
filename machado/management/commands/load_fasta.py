@@ -11,15 +11,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from Bio import SeqIO
 from django.core.management.base import BaseCommand, CommandError
+from machado.management.commands._base import HistoryCommandMixin
 from tqdm import tqdm
 
-from machado.models import History
 from machado.loaders.common import FileValidator, retrieve_organism
 from machado.loaders.exceptions import ImportingError
 from machado.loaders.sequence import SequenceLoader
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     """Load FASTA file."""
 
     help = "Load FASTA file"
@@ -72,8 +72,6 @@ class Command(BaseCommand):
         **options,
     ) -> None:
         """Execute the main function."""
-        history_obj = History()
-        history_obj.start(command="load_fasta", params=locals())
 
         if verbosity > 0:
             self.stdout.write("Preprocessing")
@@ -82,7 +80,6 @@ class Command(BaseCommand):
             FileValidator().validate(file)
             organism = retrieve_organism(organism)
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
 
         # retrieve only the file name
@@ -105,10 +102,7 @@ class Command(BaseCommand):
         for fasta in fasta_sequences:
             tasks.append(
                 pool.submit(
-                    sequence_file.store_biopython_seq_record,
-                    fasta,
-                    soterm,
-                    nosequence,
+                    sequence_file.store_biopython_seq_record, fasta, soterm, nosequence
                 )
             )
         if verbosity > 0:
@@ -118,6 +112,5 @@ class Command(BaseCommand):
                 raise (task.result())
         pool.shutdown()
 
-        history_obj.success(description="Done")
         if verbosity > 0:
             self.stdout.write(self.style.SUCCESS("Done"))

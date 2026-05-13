@@ -4,6 +4,8 @@
 # license. Please see the LICENSE.txt and README.md files that should
 # have been included as part of this package for licensing information.
 
+from machado.models import Cv, Db, Dbxref, Cvterm
+
 """Load clusters of coexpression data from LSTRAP outfile mcl.clusters.txt."""
 
 import os
@@ -11,6 +13,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from django.core.management.base import BaseCommand, CommandError
+from machado.management.commands._base import HistoryCommandMixin
 from django.db.utils import IntegrityError
 from tqdm import tqdm
 
@@ -19,10 +22,9 @@ from machado.loaders.common import get_num_lines
 from machado.loaders.common import retrieve_organism
 from machado.loaders.exceptions import ImportingError
 from machado.loaders.feature import FeatureLoader
-from machado.models import Cv, Cvterm, Dbxref, Db, History
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     """Load LSTRAP output file mcl.clusters.txt results."""
 
     help = """Load 'mcl.clusters.txt' output result file from LSTrAP.
@@ -65,8 +67,6 @@ The features need to be loaded previously or won't be registered."""
         **options,
     ):
         """Execute the main function."""
-        history_obj = History()
-        history_obj.start(command="load_coexpression_clusters", params=locals())
         filename = os.path.basename(file)
         if verbosity > 0:
             self.stdout.write("Processing file: {}".format(filename))
@@ -74,20 +74,17 @@ The features need to be loaded previously or won't be registered."""
         try:
             organism = retrieve_organism(organism)
         except IntegrityError as e:
-            history_obj.failure(description=str(e))
             raise ImportingError(e)
 
         try:
             FileValidator().validate(file)
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
 
         try:
             # retrieve only the file name
             clusters = open(file, "r")
         except IntegrityError as e:
-            history_obj.failure(description=str(e))
             raise ImportingError(e)
 
         tasks = list()
@@ -118,14 +115,12 @@ The features need to be loaded previously or won't be registered."""
             try:
                 FieldsValidator().validate(nfields, fields)
             except ImportingError as e:
-                history_obj.failure(description=str(e))
                 raise CommandError(e)
 
             if re.search(r"^(\w+)\:", fields[0]):
                 group_field = re.match(r"^(\w+)\:", fields[0])
                 name = group_field.group(1)
             else:
-                history_obj.failure(description="Cluster identification has problems.")
                 raise CommandError("Cluster identification has problems.")
             # remove cluster name before loading
             fields.pop(0)
@@ -146,6 +141,5 @@ The features need to be loaded previously or won't be registered."""
             if task.result():
                 raise (task.result())
         pool.shutdown()
-        history_obj.success(description="Done")
         if verbosity > 0:
             self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))

@@ -6,19 +6,28 @@
 
 """Remove file."""
 
+from machado.models import (
+    Assay,
+    Assayprop,
+    Analysis,
+    Analysisprop,
+    Biomaterial,
+    Biomaterialprop,
+    Feature,
+    Dbxrefprop,
+    Project,
+    Projectprop,
+    AssayProject,
+)
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError
+from machado.management.commands._base import HistoryCommandMixin
 
-from machado.models import Assay, Assayprop, Analysis, Analysisprop
-from machado.models import Biomaterial, Biomaterialprop
-from machado.models import Feature, Dbxrefprop
-from machado.models import Project, Projectprop, AssayProject
-from machado.models import History
 
 import os
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     """Remove file."""
 
     help = "Remove file (CASCADE)"
@@ -29,8 +38,6 @@ class Command(BaseCommand):
 
     def handle(self, name: str, verbosity: int = 0, **options):
         """Execute the main function."""
-        history_obj = History()
-        history_obj.start(command="remove_file", params=locals())
         filename = os.path.basename(name)
         # Handling Features
         if verbosity > 1:
@@ -43,8 +50,7 @@ class Command(BaseCommand):
                 dbxref__Dbxrefprop_dbxref_Dbxref__value=filename
             ).delete()
             Dbxrefprop.objects.filter(value=filename).delete()
-        except ObjectDoesNotExist as e:
-            history_obj.failure(description=str(e))
+        except ObjectDoesNotExist:
             raise CommandError(
                 "Features: cannot remove {} (not registered)".format(filename)
             )
@@ -63,8 +69,7 @@ class Command(BaseCommand):
             AssayProject.objects.filter(project_id__in=project_ids).delete()
             Project.objects.filter(project_id__in=project_ids).delete()
             Projectprop.objects.filter(value=filename).delete()
-        except ObjectDoesNotExist as e:
-            history_obj.failure(description=str(e))
+        except ObjectDoesNotExist:
             raise CommandError(
                 "Projects: cannot remove {} (not registered)".format(filename)
             )
@@ -82,8 +87,7 @@ class Command(BaseCommand):
             )
             AssayProject.objects.filter(assay_id__in=assay_ids).delete()
             Assay.objects.filter(assay_id__in=assay_ids).delete()
-        except ObjectDoesNotExist as e:
-            history_obj.failure(description=str(e))
+        except ObjectDoesNotExist:
             raise CommandError(
                 "Assays: cannot remove {} (not registered)".format(filename)
             )
@@ -101,8 +105,7 @@ class Command(BaseCommand):
             )
             Biomaterial.objects.filter(biomaterial_id__in=biomaterial_ids).delete()
             Biomaterialprop.objects.filter(value=filename).delete()
-        except ObjectDoesNotExist as e:
-            history_obj.failure(description=str(e))
+        except ObjectDoesNotExist:
             raise CommandError(
                 "Biomaterials: cannot remove {} (not registered)".format(filename)
             )
@@ -119,12 +122,10 @@ class Command(BaseCommand):
                 )
             )
             Analysis.objects.filter(analysis_id__in=analysis_ids).delete()
-        except ObjectDoesNotExist as e:
-            history_obj.failure(description=str(e))
+        except ObjectDoesNotExist:
             raise CommandError(
                 "Analysis: cannot remove {} (not registered)".format(filename)
             )
 
-        history_obj.success(description="Done")
         if verbosity > 0:
             self.stdout.write(self.style.SUCCESS("Done"))

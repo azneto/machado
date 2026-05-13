@@ -11,15 +11,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict
 
 from django.core.management.base import BaseCommand, CommandError
+from machado.management.commands._base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator
 from machado.loaders.exceptions import ImportingError
 from machado.loaders.phylotree import PhylotreeLoader
-from machado.models import History
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     """Load phylonodes file."""
 
     help = """Load phylonodes file. Each phylonode will get a left and right
@@ -67,8 +67,6 @@ class Command(BaseCommand):
         **options,
     ):
         """Execute the main function."""
-        history_obj = History()
-        history_obj.start(command="load_phylotree", params=locals())
         if verbosity > 0:
             self.stdout.write("Preprocessing")
 
@@ -76,7 +74,6 @@ class Command(BaseCommand):
             FileValidator().validate(file)
             phylotree = PhylotreeLoader(phylotree_name=name, organism_db=organismdb)
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
 
         file_nodes = open(file)
@@ -133,7 +130,6 @@ class Command(BaseCommand):
                     tax_id, phylonode = task.result()
                     self.nodes[tax_id]["phylonode_id"] = phylonode.phylonode_id
         except KeyError as e:
-            history_obj.failure(description="Could not calculate {}".format(e))
             raise CommandError(
                 "Could not calculate {}. Make it sure it is "
                 "possible to walk the entire tree "
@@ -157,10 +153,8 @@ class Command(BaseCommand):
         for task in tqdm(as_completed(tasks), total=len(tasks)):
             if task.result():
                 e = task.result()
-                history_obj.failure(description=str(e))
                 raise (e)
         pool.shutdown()
 
-        history_obj.success(description="Done")
         if verbosity > 0:
             self.stdout.write(self.style.SUCCESS("Done"))

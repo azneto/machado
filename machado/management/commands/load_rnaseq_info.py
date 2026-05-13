@@ -11,6 +11,7 @@ import re
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError
+from machado.management.commands._base import HistoryCommandMixin
 
 from machado.loaders.assay import AssayLoader
 from machado.loaders.biomaterial import BiomaterialLoader
@@ -19,10 +20,9 @@ from machado.loaders.common import retrieve_organism
 from machado.loaders.exceptions import ImportingError
 from machado.loaders.project import ProjectLoader
 from machado.loaders.treatment import TreatmentLoader
-from machado.models import History
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     """Load RNA-seq information file."""
 
     help = """Load RNA-seq .csv information file. The input file should be
@@ -70,8 +70,6 @@ class Command(BaseCommand):
         **options,
     ):
         """Execute the main function."""
-        history_obj = History()
-        history_obj.start(command="load_rnaseq_info", params=locals())
         filename = os.path.basename(file)
         nfields = 8
         if verbosity > 0:
@@ -86,7 +84,6 @@ class Command(BaseCommand):
             rnaseq_data = open(file, "r")
             # retrieve only the file name
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
 
         # each line is an RNA-seq experiment
@@ -98,13 +95,11 @@ class Command(BaseCommand):
             try:
                 FieldsValidator().validate(nfields, fields)
             except ImportingError as e:
-                history_obj.failure(description=str(e))
                 raise CommandError(e)
             # get organism - mandatory
             try:
                 organism = retrieve_organism(organism=organism_name)
             except ObjectDoesNotExist as e:
-                history_obj.failure(description=str(e))
                 raise ImportingError(e)
             # store project
             try:
@@ -113,7 +108,6 @@ class Command(BaseCommand):
                     name=fields[1], filename=filename
                 )
             except ObjectDoesNotExist as e:
-                history_obj.failure(description=str(e))
                 raise ImportingError(e)
 
             # store biomaterial (sample)
@@ -128,7 +122,6 @@ class Command(BaseCommand):
                     description=fields[6],
                 )
             except ImportingError as e:
-                history_obj.failure(description=str(e))
                 raise CommandError(e)
             # store treatment
             try:
@@ -137,14 +130,12 @@ class Command(BaseCommand):
                     name=fields[5], biomaterial=biomaterial_model
                 )
             except ImportingError as e:
-                history_obj.failure(description=str(e))
                 raise CommandError(e)
             try:
                 biomaterial_file.store_biomaterial_treatment(
                     biomaterial=biomaterial_model, treatment=treatment_model
                 )
             except ImportingError as e:
-                history_obj.failure(description=str(e))
                 raise CommandError(e)
 
             # store assay (experiment)
@@ -163,9 +154,7 @@ class Command(BaseCommand):
                     assay=assay_model, biomaterial=biomaterial_model
                 )
             except ImportingError as e:
-                history_obj.failure(description=str(e))
                 raise CommandError(e)
 
-        history_obj.success(description="Done")
         if verbosity > 0:
             self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))

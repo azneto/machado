@@ -11,17 +11,17 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from Bio import SearchIO
 from django.core.management.base import BaseCommand, CommandError
+from machado.management.commands._base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator
 from machado.loaders.exceptions import ImportingError
 from machado.loaders.similarity import SimilarityLoader
-from machado.models import History
 
 VALID_FORMAT = ["blast-xml", "interproscan-xml"]
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     """Load similarity file."""
 
     help = "Load similarity file"
@@ -94,15 +94,11 @@ class Command(BaseCommand):
         **options,
     ):
         """Execute the main function."""
-        history_obj = History()
-        history_obj.start(command="load_similarity", params=locals())
         filename = os.path.basename(file)
         if organism_query == "mutispecies multispecies":
-            history_obj.failure(description="Query's organism cannot be multispecies")
             raise CommandError("Query's organism cannot be multispecies")
 
         if format not in VALID_FORMAT:
-            history_obj.failure(description="The format is not valid.")
             raise CommandError(
                 "The format is not valid. Please choose: {}".format(VALID_FORMAT)
             )
@@ -123,10 +119,8 @@ class Command(BaseCommand):
             )
             similarity_records = SearchIO.parse(file, format)
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
         except ValueError as e:
-            history_obj.failure(description=str(e))
             return CommandError(e)
 
         pool = ThreadPoolExecutor(max_workers=cpu)
@@ -144,10 +138,8 @@ class Command(BaseCommand):
             try:
                 task.result()
             except ImportingError as e:
-                history_obj.failure(description=str(e))
                 raise CommandError(e)
         pool.shutdown()
 
-        history_obj.success(description="Done")
         if verbosity > 0:
             self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))

@@ -11,6 +11,7 @@ Usage:
 
 This replaces the former Haystack ``rebuild_index`` / ``update_index``
 commands.  It populates the ``FeatureSearchIndex`` table with denormalised
+from machado.models import (, FeatureSearchIndex
 data from the Chado schema and builds a tsvector column for full-text
 search.
 """
@@ -19,6 +20,7 @@ from django.conf import settings
 from django.contrib.postgres.search import SearchVector
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
+from machado.management.commands._base import HistoryCommandMixin
 from django.db.models import Q
 from tqdm import tqdm
 
@@ -31,13 +33,13 @@ from machado.models import (
     FeatureRelationship,
     Featureloc,
     Featureprop,
+    FeatureSearchIndex,
 )
-from machado.models import FeatureSearchIndex
 
 VALID_PROGRAMS = ["interproscan", "diamond", "blast"]
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     help = "Rebuild the PostgreSQL full-text search index for features."
 
     def add_arguments(self, parser):
@@ -48,9 +50,7 @@ class Command(BaseCommand):
             help="Number of records to create per bulk insert (default: 1000).",
         )
         parser.add_argument(
-            "--no-progress",
-            action="store_true",
-            help="Disable progress bar.",
+            "--no-progress", action="store_true", help="Disable progress bar."
         )
 
     def handle(self, *args, **options):
@@ -83,9 +83,7 @@ class Command(BaseCommand):
         # ── Get feature queryset (same filter as old index_queryset) ─────
         feature_qs = (
             Feature.objects.filter(
-                type__name__in=valid_types,
-                type__cv__name="sequence",
-                is_obsolete=False,
+                type__name__in=valid_types, type__cv__name="sequence", is_obsolete=False
             )
             .select_related("organism", "type")
             .order_by("feature_id")

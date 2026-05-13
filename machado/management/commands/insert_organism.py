@@ -7,13 +7,13 @@
 """Insert organism."""
 
 from django.core.management.base import BaseCommand, CommandError
+from machado.management.commands._base import HistoryCommandMixin
 
 from machado.loaders.common import insert_organism
 from machado.loaders.exceptions import ImportingError
-from machado.models import History
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     """Insert organism."""
 
     help = "Insert organism"
@@ -45,8 +45,6 @@ class Command(BaseCommand):
         **options,
     ) -> None:
         """Execute the main function."""
-        history_obj = History()
-        history_obj.start(command="insert_organism", params=locals())
 
         try:
             insert_organism(
@@ -58,10 +56,7 @@ class Command(BaseCommand):
                 comment=comment,
             )
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
-
-        history_obj.success(description="{} {} registered".format(genus, species))
 
         if verbosity > 0:
             self.stdout.write(

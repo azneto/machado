@@ -12,16 +12,16 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError
+from machado.management.commands._base import HistoryCommandMixin
 from django.db.utils import IntegrityError
 from tqdm import tqdm
 
 from machado.loaders.analysis import AnalysisLoader
 from machado.loaders.common import FileValidator, FieldsValidator
 from machado.loaders.exceptions import ImportingError
-from machado.models import History
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     """Load RNA-seq expression tpm data from LSTrAP exp_matrix.tpm.txt file."""
 
     help = """Load RNA-seq exp_matrix.tpm result file. This file is tabular
@@ -109,15 +109,12 @@ class Command(BaseCommand):
         **options,
     ):
         """Execute the main function."""
-        history_obj = History()
-        history_obj.start(command="load_rnaseq_data", params=locals())
         filename = os.path.basename(file)
         if verbosity > 0:
             self.stdout.write("Processing file: {}".format(filename))
         try:
             FileValidator().validate(file)
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
 
         # start reading file
@@ -125,7 +122,6 @@ class Command(BaseCommand):
             rnaseq_data = open(file, "r")
             # retrieve only the file name
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
         header = 1
         # analysis_list = defaultdict(list)
@@ -142,7 +138,6 @@ class Command(BaseCommand):
             try:
                 FieldsValidator().validate(nfields, fields)
             except ImportingError as e:
-                history_obj.failure(description=str(e))
                 raise CommandError(e)
                 # read header and instantiate analysis object for each assay
                 # e.g. SRR12345.
@@ -156,7 +151,6 @@ class Command(BaseCommand):
                     try:
                         assay = string.group(1)
                     except IntegrityError as e:
-                        history_obj.failure(description=str(e))
                         raise CommandError(e)
                     # store analysis
                     try:
@@ -171,7 +165,6 @@ class Command(BaseCommand):
                             filename=filename,
                         )
                     except ImportingError as e:
-                        history_obj.failure(description=str(e))
                         raise CommandError(e)
                     # store quantification
                     try:
@@ -179,7 +172,6 @@ class Command(BaseCommand):
                             analysis=analysis, assayacc=assay, assaydb=assaydb
                         )
                     except ImportingError as e:
-                        history_obj.failure(description=str(e))
                         raise CommandError(e)
                     # finally, store each analysis in a list.
                     analysis_list.insert(i, analysis)
@@ -215,10 +207,8 @@ class Command(BaseCommand):
             except ObjectDoesNotExist as e:
                 not_found.append(e)
                 if not ignorenotfound:
-                    history_obj.failure(description=str(e))
                     raise CommandError(e)
             except ImportingError as e:
-                history_obj.failure(description=str(e))
                 raise CommandError(e)
         pool.shutdown()
 
@@ -227,6 +217,5 @@ class Command(BaseCommand):
             for item in not_found:
                 self.stdout.write(f"{item}\n")
 
-        history_obj.success(description="Done")
         if verbosity > 0:
             self.stdout.write(self.style.SUCCESS("Done."))
