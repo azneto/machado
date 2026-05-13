@@ -11,7 +11,7 @@ import os
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError
-from machado.management.commands.base import HistoryCommandMixin
+from machado.management.commands._base import HistoryCommandMixin
 from django.db.utils import IntegrityError
 
 from machado.loaders.exceptions import ImportingError

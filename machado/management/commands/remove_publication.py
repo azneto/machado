@@ -9,7 +9,7 @@
 from machado.models import Pub, PubDbxref, Dbxref
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError
-from machado.management.commands.base import HistoryCommandMixin
+from machado.management.commands._base import HistoryCommandMixin
 
 
 class Command(HistoryCommandMixin, BaseCommand):

@@ -20,7 +20,7 @@ from django.conf import settings
 from django.contrib.postgres.search import SearchVector
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
-from machado.management.commands.base import HistoryCommandMixin
+from machado.management.commands._base import HistoryCommandMixin
 from django.db.models import Q
 from tqdm import tqdm
 

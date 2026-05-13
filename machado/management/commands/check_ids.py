@@ -10,7 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from machado.loaders.common import retrieve_feature_id, FileValidator, retrieve_organism
 from machado.loaders.exceptions import ImportingError
 from django.core.management.base import BaseCommand, CommandError
-from machado.management.commands.base import HistoryCommandMixin
+from machado.management.commands._base import HistoryCommandMixin
 
 
 class Command(HistoryCommandMixin, BaseCommand):

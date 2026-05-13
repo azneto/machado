@@ -10,7 +10,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from django.core.management.base import BaseCommand, CommandError
-from machado.management.commands.base import HistoryCommandMixin
+from machado.management.commands._base import HistoryCommandMixin
 from django.db.utils import IntegrityError
 from tqdm import tqdm
 

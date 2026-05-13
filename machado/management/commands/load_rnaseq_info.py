@@ -11,7 +11,7 @@ import re
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError
-from machado.management.commands.base import HistoryCommandMixin
+from machado.management.commands._base import HistoryCommandMixin
 
 from machado.loaders.assay import AssayLoader
 from machado.loaders.biomaterial import BiomaterialLoader
