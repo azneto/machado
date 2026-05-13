@@ -28,9 +28,9 @@ sudo apt-get install -y nodejs
 Finally, proceed with JBrowse installation:
 
 ```bash
-wget https://github.com/GMOD/jbrowse/releases/download/1.16.9-release/JBrowse-1.16.9.zip
-unzip JBrowse-1.16.9.zip
-sudo mv JBrowse-1.16.9 /var/www/html/jbrowse
+wget https://github.com/GMOD/jbrowse/releases/download/1.16.12-release/JBrowse-1.16.12.zip
+unzip JBrowse-1.16.12.zip
+sudo mv JBrowse-1.16.12 /var/www/html/jbrowse
 cd /var/www/html
 sudo chown `whoami` jbrowse
 cd jbrowse

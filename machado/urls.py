@@ -17,13 +17,25 @@ try:
 except AttributeError:
     CACHE_TIMEOUT = 60 * 60
 
-from machado.views import feature, search, autocomplete
+from machado.views import feature, search, autocomplete, jbrowse
 
 urlpatterns = [
     re_path(
         r"autocomplete/",
         autocomplete.AutocompleteView.as_view(),
         name="autocomplete_html",
+    ),
+    re_path(
+        r"^api/jbrowse/stats/global$", jbrowse.jbrowse_global, name="jbrowse_global"
+    ),
+    re_path(r"^api/jbrowse/names$", jbrowse.jbrowse_names, name="jbrowse_names"),
+    re_path(
+        r"^api/jbrowse/refSeqs.json$", jbrowse.jbrowse_refseqs, name="jbrowse_refseqs"
+    ),
+    re_path(
+        r"^api/jbrowse/features/(?P<refseq>.+)$",
+        jbrowse.jbrowse_features,
+        name="jbrowse_features",
     ),
     re_path(
         r"feature/",

@@ -34,9 +34,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "rest_framework",
-    "rest_framework.authtoken",
-    "drf_yasg",
     "machado",
 ]
 
@@ -112,18 +109,3 @@ if env("MACHADO_JBROWSE_OFFSET", default=None):
 
 if env("MACHADO_JBROWSE_TRACKS", default=None):
     MACHADO_JBROWSE_TRACKS = env("MACHADO_JBROWSE_TRACKS")
-
-# Optional API example settings — set only if defined in .env
-_OPTIONAL_MACHADO_VARS = [
-    "MACHADO_URL",
-    "MACHADO_EXAMPLE_TXT",
-    "MACHADO_EXAMPLE_ORGANISM_COMMON_NAME",
-    "MACHADO_EXAMPLE_AA_ACC",
-    "MACHADO_EXAMPLE_ORGANISM_ID",
-    "MACHADO_EXAMPLE_AA",
-    "MACHADO_EXAMPLE_NA",
-]
-for _var in _OPTIONAL_MACHADO_VARS:
-    _val = env(_var, default=None)
-    if _val is not None:
-        globals()[_var] = _val
