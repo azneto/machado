@@ -26,34 +26,34 @@ In order to have Apache2 hosting the Django applications, it's necessary to use 
 sudo apt install libapache2-mod-wsgi-py3
 ```
 
-Now configure Apache to use the WSGI module. Here is the configuration file (`/etc/apache2/sites-available/YOURPROJECT.conf`):
+Now configure Apache to use the WSGI module. Here is the configuration file (`/etc/apache2/sites-available/MYGENOME.conf`):
 
 ```apacheconf
-<Directory "/var/www/YOURPROJECT/machadoproject">
+<Directory "/var/www/MYGENOME/machadoproject">
     <Files "wsgi.py">
         Require all granted
     </Files>
 </Directory>
 
-Alias /YOURPROJECT/static/ /var/www/YOURPROJECT/staticfiles/
+Alias /MYGENOME/static/ /var/www/MYGENOME/staticfiles/
 
-<Directory "/var/www/YOURPROJECT/staticfiles">
+<Directory "/var/www/MYGENOME/staticfiles">
     Require all granted
 </Directory>
 
-WSGIDaemonProcess machadoproject python-home=/var/www/YOURPROJECT/.venv python-path=/var/www/YOURPROJECT lang='en_US.UTF-8' locale='en_US.UTF-8'
+WSGIDaemonProcess machadoproject python-home=/var/www/MYGENOME/.venv python-path=/var/www/MYGENOME lang='en_US.UTF-8' locale='en_US.UTF-8'
 WSGIProcessGroup machadoproject
-WSGIScriptAlias /YOURPROJECT /var/www/YOURPROJECT/machadoproject/wsgi.py
+WSGIScriptAlias /MYGENOME /var/www/MYGENOME/machadoproject/wsgi.py
 ```
 
-- In this example the whole project is in `/var/www/YOURPROJECT`, but it's not required to be there.
+- In this example the whole project is in `/var/www/MYGENOME`, but it's not required to be there.
 - This directory and sub-directories must have 755 permissions.
 - Ensure the `python-home` path matches your virtual environment (`.venv`).
 
 There must be a symlink of your config file in the sites-enabled directory:
 
 ```bash
-sudo ln -s /etc/apache2/sites-available/YOURPROJECT.conf /etc/apache2/sites-enabled/YOURPROJECT.conf
+sudo ln -s /etc/apache2/sites-available/MYGENOME.conf /etc/apache2/sites-enabled/MYGENOME.conf
 ```
 
 In the `.env` file, ensure the following variables are set for production:
@@ -77,4 +77,4 @@ It's necessary to restart the Apache2 service every time there are modifications
 sudo systemctl restart apache2.service
 ```
 
-Now, open your browser and go to your configured domain (e.g., <http://yourdomain.com/YOURPROJECT>).
+Now, open your browser and go to your configured domain (e.g., <http://yourdomain.com/MYGENOME>).

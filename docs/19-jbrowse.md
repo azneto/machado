@@ -51,7 +51,7 @@ Edit the file `trackList.json` to set the **organism** name you have loaded to t
 **In case you have WSGI apache module configured and running**, change the `baseUrl` variable in `trackList.json` to refer to the proper address:
 
 ```
-"baseUrl": "http://localhost/YOURPROJECT/api/jbrowse"
+"baseUrl": "http://localhost/MYGENOME/api/jbrowse"
 ```
 
 - Repeat the steps above for as many other organisms as you may have loaded to the database.
