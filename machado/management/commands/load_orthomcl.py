@@ -6,20 +6,21 @@
 
 """Load OrthoMCL groups.txt result."""
 
+from machado.models import Cv, Db, Dbxref, Cvterm
 import os
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from django.core.management.base import BaseCommand, CommandError
+from machado.management.commands.base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator
 from machado.loaders.exceptions import ImportingError
 from machado.loaders.feature import MultispeciesFeatureLoader
-from machado.models import Cv, Cvterm, Dbxref, Db, History
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     """Load OrthoMCL groups.txt results."""
 
     help = """Load 'groups.txt' output result file from orthoMCL.
@@ -36,12 +37,9 @@ The feature members need to be loaded previously."""
 
     def handle(self, file: str, cpu: int = 1, verbosity: int = 0, **options):
         """Execute the main function."""
-        history_obj = History()
-        history_obj.start(command="load_orthomcl", params=locals())
         try:
             FileValidator().validate(file)
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
 
         filename = os.path.basename(file)
@@ -51,7 +49,6 @@ The feature members need to be loaded previously."""
             groups = open(file, "r")
             # retrieve only the file name
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
         pool = ThreadPoolExecutor(max_workers=cpu)
         tasks = list()
@@ -86,9 +83,6 @@ The feature members need to be loaded previously."""
                 for field in fields:
                     members.append(field)
             else:
-                history_obj.failure(
-                    description="Cluster file has fields problems. Please, check."
-                )
                 raise CommandError("Cluster file has fields problems. Please, check.")
             # only orthologous groups with 2 or more members allowed
             if len(members) > 1:
@@ -106,9 +100,7 @@ The feature members need to be loaded previously."""
         for task in tqdm(as_completed(tasks), total=len(tasks)):
             if task.result():
                 e = task.result()
-                history_obj.failure(description=str(e))
                 raise (e)
         pool.shutdown()
-        history_obj.success(description="Done")
         if verbosity > 0:
             self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))

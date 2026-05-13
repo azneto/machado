@@ -4,6 +4,8 @@
 # license. Please see the LICENSE.txt and README.md files that should
 # have been included as part of this package for licensing information.
 
+from machado.models import Cvterm
+
 """Load coexpression data from LSTRAP output file pcc.mcl.txt."""
 
 import os
@@ -12,16 +14,16 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from django.db.utils import IntegrityError
 
 from django.core.management.base import BaseCommand, CommandError
+from machado.management.commands.base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator, FieldsValidator, retrieve_organism
 from machado.loaders.common import get_num_lines
 from machado.loaders.exceptions import ImportingError
 from machado.loaders.feature import FeatureLoader
-from machado.models import Cvterm, History
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     """Load LSTRAP output file pcc.mcl.txt results."""
 
     help = """Load 'pcc.mcl.txt' output result file from LSTrAP.
@@ -65,8 +67,6 @@ The feature pairs from columns 1 and 2 need to be loaded previously."""
         **options,
     ):
         """Execute the main function."""
-        history_obj = History()
-        history_obj.start(command="load_relations_coexpression_pairs", params=locals())
 
         filename = os.path.basename(file)
         if verbosity > 0:
@@ -78,13 +78,10 @@ The feature pairs from columns 1 and 2 need to be loaded previously."""
             pairs = open(file, "r")
             # retrieve only the file name
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
         except IntegrityError as e:
-            history_obj.failure(description=str(e))
             raise ImportingError(e)
         except ImportingError as e:
-            history_obj.failure(description=str(e))
             raise CommandError(e)
 
         cvterm_corel = Cvterm.objects.get(
@@ -106,7 +103,6 @@ The feature pairs from columns 1 and 2 need to be loaded previously."""
                 try:
                     FieldsValidator().validate(nfields, fields)
                 except ImportingError as e:
-                    history_obj.failure(description=str(e))
                     raise CommandError(e)
                 # get corrected PCC value (last item from fields list)
                 value = float(fields.pop()) + 0.7
@@ -130,6 +126,5 @@ The feature pairs from columns 1 and 2 need to be loaded previously."""
                         raise (task.result())
                 tasks.clear()
             pool.shutdown()
-        history_obj.success(description="Done")
         if verbosity > 0:
             self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))

@@ -6,14 +6,15 @@
 
 """Remove feature annotation."""
 
+from machado.models import Cvterm, Featureprop
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError
+from machado.management.commands.base import HistoryCommandMixin
 
 from machado.loaders.common import retrieve_organism
-from machado.models import Cvterm, Featureprop, History
 
 
-class Command(BaseCommand):
+class Command(HistoryCommandMixin, BaseCommand):
     """Remove organism."""
 
     help = "Remove organism"
@@ -37,12 +38,9 @@ class Command(BaseCommand):
 
     def handle(self, cvterm: str, organism: str = None, verbosity: int = 1, **options):
         """Execute the main function."""
-        history_obj = History()
-        history_obj.start(command="remove_feature_annotation", params=locals())
         try:
             cvterm_obj = Cvterm.objects.get(name=cvterm, cv__name="feature_property")
         except ObjectDoesNotExist:
-            history_obj.failure(description="cvterm does not exist in the database")
             raise CommandError("cvterm does not exist in database!")
 
         try:
@@ -56,6 +54,5 @@ class Command(BaseCommand):
         count = feature_props.count()
         feature_props.delete()
 
-        history_obj.success(description="{} removed".format(count))
         if verbosity > 0:
             self.stdout.write(self.style.SUCCESS("{} removed".format(count)))
