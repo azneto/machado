@@ -7,7 +7,7 @@
 """URLs."""
 
 from django.conf import settings
-from django.urls import include, re_path
+from django.urls import re_path
 from django.views.decorators.cache import cache_page
 
 from machado.views import common
@@ -25,8 +25,6 @@ urlpatterns = [
         autocomplete.AutocompleteView.as_view(),
         name="autocomplete_html",
     ),
-    re_path(r"api/", include("machado.api.urls"), name="api"),
-    re_path(r"account/", include("machado.account.urls"), name="account"),
     re_path(
         r"feature/",
         cache_page(CACHE_TIMEOUT)(feature.FeatureView.as_view()),
