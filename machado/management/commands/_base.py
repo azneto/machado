@@ -36,13 +36,22 @@ class HistoryCommandMixin:
             ObjectDoesNotExist,
             MultipleObjectsReturned,
             IntegrityError,
+            CommandError,
         ) as e:
-            history_obj.failure(description=str(e))
+            error_msg = str(e)
+            # Log to history
+            history_obj.failure(description=error_msg)
+
+            # Inform user through terminal with styling
+            self.stdout.write(self.style.ERROR(f"ERROR: {error_msg}"))
+
             # Re-raise as CommandError if it's not already one, or just re-raise
             if not isinstance(e, CommandError):
                 raise CommandError(e)
             raise e
         except Exception as e:
-            # For non-data-related errors, we don't log to history as per user request
-            # But we should still allow the exception to propagate
+            # Log ALL failures to history, including unexpected ones
+            error_msg = str(e)
+            history_obj.failure(description=error_msg)
+            self.stdout.write(self.style.ERROR(f"CRITICAL ERROR: {error_msg}"))
             raise e

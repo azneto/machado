@@ -274,5 +274,7 @@ class CvtermUtilsTest(TestCase):
 
     def test_retrieve_cvterm_fail(self):
         """Test retrieve cvterm fail."""
-        with self.assertRaisesRegex(ImportingError, "is not a test_cv ontology term"):
+        with self.assertRaisesRegex(
+            ImportingError, r"\(test_cv\).*ontology term not found"
+        ):
             retrieve_cvterm("test_cv", "unknown")

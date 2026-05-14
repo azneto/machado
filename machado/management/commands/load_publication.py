@@ -15,7 +15,6 @@ from machado.management.commands._base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator
-from machado.loaders.exceptions import ImportingError
 from machado.loaders.publication import PublicationLoader
 
 
@@ -34,11 +33,7 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("Preprocessing")
 
-        try:
-            FileValidator().validate(file)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        FileValidator().validate(file)
         # filename = os.path.basename(file)
         bib_database = None
         try:
@@ -61,10 +56,7 @@ class Command(HistoryCommandMixin, BaseCommand):
             total=len(tasks),
             disable=False if verbosity > 0 else True,
         ):
-            try:
-                task.result()
-            except ImportingError as e:
-                raise CommandError(e)
+            task.result()
         pool.shutdown()
 
         if verbosity > 0:

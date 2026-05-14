@@ -7,12 +7,11 @@
 """Load relations ontology."""
 
 import obonet
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from machado.management.commands._base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator
-from machado.loaders.exceptions import ImportingError
 from machado.loaders.ontology import OntologyLoader
 
 
@@ -34,11 +33,7 @@ class Command(HistoryCommandMixin, BaseCommand):
 
     def handle(self, file: str, verbosity: int = 1, **options):
         """Execute the main function."""
-        try:
-            FileValidator().validate(file)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        FileValidator().validate(file)
         # Load the ontology file
         with open(file) as obo_file:
             G = obonet.read_obo(obo_file)
@@ -49,11 +44,7 @@ class Command(HistoryCommandMixin, BaseCommand):
         cv_name = "relationship"
 
         # Initializing ontology
-        try:
-            ontology = OntologyLoader(cv_name)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        ontology = OntologyLoader(cv_name)
         # Load typedefs as Dbxrefs and Cvterm
         if verbosity > 0:
             self.stdout.write("Loading typedefs")

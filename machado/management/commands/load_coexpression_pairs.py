@@ -11,15 +11,13 @@ from machado.models import Cvterm
 import os
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from django.db.utils import IntegrityError
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from machado.management.commands._base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator, FieldsValidator, retrieve_organism
 from machado.loaders.common import get_num_lines
-from machado.loaders.exceptions import ImportingError
 from machado.loaders.feature import FeatureLoader
 
 
@@ -72,17 +70,10 @@ The feature pairs from columns 1 and 2 need to be loaded previously."""
         if verbosity > 0:
             self.stdout.write("Processing file: {}".format(filename))
 
-        try:
-            FileValidator().validate(file)
-            organism = retrieve_organism(organism)
-            pairs = open(file, "r")
-            # retrieve only the file name
-        except ImportingError as e:
-            raise CommandError(e)
-        except IntegrityError as e:
-            raise ImportingError(e)
-        except ImportingError as e:
-            raise CommandError(e)
+        FileValidator().validate(file)
+        organism = retrieve_organism(organism)
+        pairs = open(file, "r")
+        # retrieve only the file name
 
         cvterm_corel = Cvterm.objects.get(
             name="correlated with", cv__name="relationship"
@@ -100,10 +91,7 @@ The feature pairs from columns 1 and 2 need to be loaded previously."""
             for line in tqdm(pairs, total=size):
                 nfields = 3
                 fields = re.split(r"\s+", line.rstrip())
-                try:
-                    FieldsValidator().validate(nfields, fields)
-                except ImportingError as e:
-                    raise CommandError(e)
+                FieldsValidator().validate(nfields, fields)
                 # get corrected PCC value (last item from fields list)
                 value = float(fields.pop()) + 0.7
                 tasks.append(

@@ -16,7 +16,6 @@ from machado.management.commands._base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator
-from machado.loaders.exceptions import ImportingError
 from machado.loaders.feature import MultispeciesFeatureLoader
 
 
@@ -37,19 +36,12 @@ The feature members need to be loaded previously."""
 
     def handle(self, file: str, cpu: int = 1, verbosity: int = 0, **options):
         """Execute the main function."""
-        try:
-            FileValidator().validate(file)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        FileValidator().validate(file)
         filename = os.path.basename(file)
         if verbosity > 0:
             self.stdout.write("Processing file: {}".format(filename))
-        try:
-            groups = open(file, "r")
-            # retrieve only the file name
-        except ImportingError as e:
-            raise CommandError(e)
+        groups = open(file, "r")
+        # retrieve only the file name
         pool = ThreadPoolExecutor(max_workers=cpu)
         tasks = list()
         cv, created = Cv.objects.get_or_create(name="feature_property")

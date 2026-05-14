@@ -15,7 +15,6 @@ from machado.management.commands._base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator
-from machado.loaders.exceptions import ImportingError
 from machado.loaders.similarity import SimilarityLoader
 
 VALID_FORMAT = ["blast-xml", "interproscan-xml"]
@@ -102,8 +101,8 @@ class Command(HistoryCommandMixin, BaseCommand):
             raise CommandError(
                 "The format is not valid. Please choose: {}".format(VALID_FORMAT)
             )
+        FileValidator().validate(file)
         try:
-            FileValidator().validate(file)
             similarity_file = SimilarityLoader(
                 filename=filename,
                 so_query=so_query,
@@ -118,10 +117,8 @@ class Command(HistoryCommandMixin, BaseCommand):
                 input_format=format,
             )
             similarity_records = SearchIO.parse(file, format)
-        except ImportingError as e:
-            raise CommandError(e)
         except ValueError as e:
-            return CommandError(e)
+            raise CommandError(e)
 
         pool = ThreadPoolExecutor(max_workers=cpu)
         tasks = list()
@@ -135,10 +132,7 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("Loading")
         for task in tqdm(as_completed(tasks), total=len(tasks)):
-            try:
-                task.result()
-            except ImportingError as e:
-                raise CommandError(e)
+            task.result()
         pool.shutdown()
 
         if verbosity > 0:

@@ -8,8 +8,7 @@
 
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from machado.loaders.common import retrieve_feature_id, FileValidator, retrieve_organism
-from machado.loaders.exceptions import ImportingError
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from machado.management.commands._base import HistoryCommandMixin
 
 
@@ -47,16 +46,8 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("Loading")
 
-        try:
-            FileValidator().validate(file)
-        except ImportingError as e:
-            raise CommandError(e)
-
-        try:
-            organism = retrieve_organism(organism)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        FileValidator().validate(file)
+        organism = retrieve_organism(organism)
         f = open(file, "r+")
         for line in f.readlines():
             notfound = set()

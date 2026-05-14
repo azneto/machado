@@ -13,7 +13,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError
 from machado.management.commands._base import HistoryCommandMixin
-from django.db.utils import IntegrityError
 from tqdm import tqdm
 
 from machado.loaders.analysis import AnalysisLoader
@@ -112,17 +111,10 @@ class Command(HistoryCommandMixin, BaseCommand):
         filename = os.path.basename(file)
         if verbosity > 0:
             self.stdout.write("Processing file: {}".format(filename))
-        try:
-            FileValidator().validate(file)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        FileValidator().validate(file)
         # start reading file
-        try:
-            rnaseq_data = open(file, "r")
-            # retrieve only the file name
-        except ImportingError as e:
-            raise CommandError(e)
+        rnaseq_data = open(file, "r")
+        # retrieve only the file name
         header = 1
         # analysis_list = defaultdict(list)
         analysis_list = list()
@@ -135,12 +127,7 @@ class Command(HistoryCommandMixin, BaseCommand):
             fields = re.split("\t", line.rstrip())
             nfields = len(fields)
             # validate fields within line
-            try:
-                FieldsValidator().validate(nfields, fields)
-            except ImportingError as e:
-                raise CommandError(e)
-                # read header and instantiate analysis object for each assay
-                # e.g. SRR12345.
+            FieldsValidator().validate(nfields, fields)
             if header:
                 # first element is the string "gene" - need to be removed
                 fields.pop(0)
@@ -148,31 +135,22 @@ class Command(HistoryCommandMixin, BaseCommand):
                     # parse field to get SRA ID. e.g.: SRR5167848.htseq
                     # try to remove ".htseq" part of string
                     string = re.match(r"(\w+)\.(\w+)", fields[i])
-                    try:
-                        assay = string.group(1)
-                    except IntegrityError as e:
-                        raise CommandError(e)
+                    assay = string.group(1)
                     # store analysis
-                    try:
-                        analysis = analysis_file.store_analysis(
-                            program=program,
-                            sourcename=fields[i],
-                            programversion=programversion,
-                            timeexecuted=timeexecuted,
-                            algorithm=algorithm,
-                            name=assay,
-                            description=description,
-                            filename=filename,
-                        )
-                    except ImportingError as e:
-                        raise CommandError(e)
+                    analysis = analysis_file.store_analysis(
+                        program=program,
+                        sourcename=fields[i],
+                        programversion=programversion,
+                        timeexecuted=timeexecuted,
+                        algorithm=algorithm,
+                        name=assay,
+                        description=description,
+                        filename=filename,
+                    )
                     # store quantification
-                    try:
-                        analysis_file.store_quantification(
-                            analysis=analysis, assayacc=assay, assaydb=assaydb
-                        )
-                    except ImportingError as e:
-                        raise CommandError(e)
+                    analysis_file.store_quantification(
+                        analysis=analysis, assayacc=assay, assaydb=assaydb
+                    )
                     # finally, store each analysis in a list.
                     analysis_list.insert(i, analysis)
                 header = 0

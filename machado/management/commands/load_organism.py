@@ -9,12 +9,11 @@
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from machado.management.commands._base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator
-from machado.loaders.exceptions import ImportingError
 from machado.loaders.organism import OrganismLoader
 
 
@@ -38,12 +37,8 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("Preprocessing")
 
-        try:
-            FileValidator().validate(file)
-            organism_db = OrganismLoader(organism_db=name)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        FileValidator().validate(file)
+        organism_db = OrganismLoader(organism_db=name)
         file_names = open(file)
 
         pool = ThreadPoolExecutor(max_workers=cpu)

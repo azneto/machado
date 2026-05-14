@@ -728,5 +728,7 @@ class FeatureLoaderTest(TestCase):
         mock_attrs = MockAttrLoader.return_value
         mock_attrs.get_attributes.return_value = {"vc": "nonexistent_so_term"}
 
-        with self.assertRaisesRegex(ImportingError, "is not a sequence ontology term"):
+        with self.assertRaisesRegex(
+            ImportingError, r"\(sequence\).*ontology term not found"
+        ):
             loader.store_tabix_VCF_feature(tabix_mock)
