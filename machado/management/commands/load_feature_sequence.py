@@ -25,20 +25,27 @@ class Command(HistoryCommandMixin, BaseCommand):
 
     def add_arguments(self, parser):
         """Define the arguments."""
-        parser.add_argument("--file", help="FASTA File", required=True, type=str)
+        parser.add_argument(
+            "--file", help="Path to the FASTA file", required=True, type=str
+        )
         parser.add_argument(
             "--soterm",
-            help="SO Sequence Ontology Term (eg. chromosome, assembly)",
+            help="Sequence Ontology (SO) term (e.g., 'mRNA', 'polypeptide')",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--organism",
-            help="Species name (eg. Homo sapiens, Mus musculus)",
+            help="Scientific name of the species (e.g., 'Homo sapiens')",
             required=True,
             type=str,
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(
         self,
@@ -66,7 +73,7 @@ class Command(HistoryCommandMixin, BaseCommand):
                 pool.submit(sequence_file.add_sequence_to_feature, fasta, soterm)
             )
         if verbosity > 0:
-            self.stdout.write("Loading")
+            self.stdout.write("Loading data...")
         for task in tqdm(as_completed(tasks), total=len(tasks)):
             if task.result():
                 e = task.result()
@@ -74,4 +81,6 @@ class Command(HistoryCommandMixin, BaseCommand):
         pool.shutdown()
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))
+            self.stdout.write(
+                self.style.SUCCESS("Successfully processed {}".format(filename))
+            )

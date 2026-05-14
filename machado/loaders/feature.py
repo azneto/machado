@@ -78,14 +78,14 @@ class FeatureLoaderBase(object):
                 dbxref_doi = Dbxref.objects.get(accession=doi)
             except ObjectDoesNotExist:
                 raise ImportingError(
-                    "{} not registered.".format(doi),
+                    "DOI '{}' is not registered.".format(doi),
                     file=self.filename,
                 )
             try:
                 self.pub_dbxref_doi = PubDbxref.objects.get(dbxref=dbxref_doi)
             except ObjectDoesNotExist:
                 raise ImportingError(
-                    "{} not registered.".format(doi),
+                    "DOI '{}' is not registered.".format(doi),
                     file=self.filename,
                 )
 
@@ -103,7 +103,7 @@ class FeatureLoader(FeatureLoaderBase):
             self.organism = organism
         else:
             raise ImportingError(
-                "FeatureLoader requires an organism parameter", file=filename
+                "FeatureLoader requires a valid organism parameter.", file=filename
             )
 
         super(FeatureLoader, self).__init__(source, filename, doi)
@@ -129,7 +129,9 @@ class FeatureLoader(FeatureLoaderBase):
                 )
             except ObjectDoesNotExist:
                 raise ImportingError(
-                    "{} is not a sequence ontology term.".format(tabix_feature.feature),
+                    "'{}' is not a valid Sequence Ontology term.".format(
+                        tabix_feature.feature
+                    ),
                     file=self.filename,
                 )
 
@@ -167,7 +169,9 @@ class FeatureLoader(FeatureLoaderBase):
             ).feature_id
         except (IntegrityError, DataError) as e:
             raise ImportingError(
-                "ID {} already registered. {}".format(attrs_id, e),
+                "Feature ID '{}' is already registered. Details: {}".format(
+                    attrs_id, e
+                ),
                 file=self.filename,
             )
 
@@ -196,10 +200,8 @@ class FeatureLoader(FeatureLoaderBase):
             srcfeature_id = srcfeature.first()
         else:
             raise ImportingError(
-                "Parent not found: {}. It's required to load "
-                "a reference FASTA file before loading features.".format(
-                    tabix_feature.contig
-                )
+                "Reference feature '{}' not found. Ensure the reference FASTA "
+                "file is loaded before importing features.".format(tabix_feature.contig)
             )
 
         # the database requires -1, 0, and +1 for strand
@@ -311,7 +313,7 @@ class FeatureLoader(FeatureLoaderBase):
             attrs_class = attrs_dict.get("tsa")
         else:
             raise ImportingError(
-                "{}: Impossible to get the attribute which defines the type of variation (eg. TSA, VC, file=self.filename, line=line)".format(
+                "{}: Unable to identify the variation type attribute (e.g., TSA or VC).".format(
                     tabix_feature.id
                 ),
                 file=self.filename,
@@ -321,7 +323,7 @@ class FeatureLoader(FeatureLoaderBase):
             cvterm = retrieve_cvterm(cv="sequence", term=attrs_class)
         except ObjectDoesNotExist:
             raise ImportingError(
-                "{} is not a sequence ontology term.".format(attrs_class),
+                "'{}' is not a valid Sequence Ontology term.".format(attrs_class),
                 file=self.filename,
             )
 
@@ -348,7 +350,9 @@ class FeatureLoader(FeatureLoaderBase):
             ).feature_id
         except (IntegrityError, DataError) as e:
             raise ImportingError(
-                "ID {} already registered. {}".format(tabix_feature.id, e),
+                "Feature ID '{}' is already registered. Details: {}".format(
+                    tabix_feature.id, e
+                ),
                 file=self.filename,
                 line=line,
             )
@@ -388,10 +392,8 @@ class FeatureLoader(FeatureLoaderBase):
             srcfeature_id = srcfeature.first()
         else:
             raise ImportingError(
-                "Parent not found: {}. It's required to load "
-                "a reference FASTA file before loading features.".format(
-                    tabix_feature.contig
-                )
+                "Reference feature '{}' not found. Ensure the reference FASTA "
+                "file is loaded before importing features.".format(tabix_feature.contig)
             )
 
         # Reference allele
@@ -460,7 +462,7 @@ class FeatureLoader(FeatureLoaderBase):
             db_name, dbxref_accession = dbxref.split(":", 1)
         except ValueError:
             raise ImportingError(
-                "Incorrect DBxRef {}. It should have two colon-separated values (eg. DB:DBxREF, file=self.filename).".format(
+                "Invalid DBxRef format: '{}'. Expected 'DB:ACCESSION' (e.g., 'GO:0008150').".format(
                     dbxref
                 ),
                 file=self.filename,
@@ -482,7 +484,9 @@ class FeatureLoader(FeatureLoaderBase):
             doi_obj = Dbxref.objects.get(accession=doi.lower(), db__name="DOI")
             pub_obj = Pub.objects.get(PubDbxref_pub_Pub__dbxref=doi_obj)
         except ObjectDoesNotExist:
-            raise ImportingError("{} not registered.".format(doi), file=self.filename)
+            raise ImportingError(
+                "DOI '{}' is not registered.".format(doi), file=self.filename
+            )
 
         FeaturePub.objects.get_or_create(feature_id=feature_id, pub=pub_obj)
 
@@ -621,10 +625,12 @@ class MultispeciesFeatureLoader(FeatureLoaderBase):
                 feature__type__name=soterm,
             ).feature_id
         except ObjectDoesNotExist:
-            raise ObjectDoesNotExist("{} {} does not exist".format(soterm, accession))
+            raise ObjectDoesNotExist(
+                "Feature {} '{}' does not exist.".format(soterm, accession)
+            )
         except MultipleObjectsReturned:
             raise MultipleObjectsReturned(
-                "{} {} matches multiple features".format(soterm, accession)
+                "Multiple features match {} '{}'".format(soterm, accession)
             )
 
     def store_bio_searchio_hit(self, searchio_hit: Hit, target: str) -> None:

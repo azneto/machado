@@ -15,18 +15,20 @@ from machado.management.commands._base import HistoryCommandMixin
 class Command(HistoryCommandMixin, BaseCommand):
     """Remove phylotree."""
 
-    help = "Remove Phylotree (CASCADE)"
+    help = "Remove a phylotree and its associated nodes from the database"
 
     def add_arguments(self, parser):
         """Define the arguments."""
-        parser.add_argument("--name", help="phylotree.name", required=True, type=str)
+        parser.add_argument(
+            "--name", help="Name of the phylotree to remove", required=True, type=str
+        )
 
     def handle(self, name: str, verbosity: int = 1, **options):
         """Execute the main function."""
         try:
             if verbosity > 0:
                 self.stdout.write(
-                    "Deleting {} and every child" "record (CASCADE)".format(name)
+                    "Deleting phylotree '{}' and all associated records...".format(name)
                 )
             phylotree = Phylotree.objects.get(name=name)
             phylonode_ids = list(
@@ -39,6 +41,10 @@ class Command(HistoryCommandMixin, BaseCommand):
             phylotree.delete()
 
             if verbosity > 0:
-                self.stdout.write(self.style.SUCCESS("Done"))
+                self.stdout.write(
+                    self.style.SUCCESS("Operation completed successfully.")
+                )
         except ObjectDoesNotExist:
-            raise CommandError("Cannot remove {} (not registered)".format(name))
+            raise CommandError(
+                "Cannot remove '{}' (not found in database).".format(name)
+            )

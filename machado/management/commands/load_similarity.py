@@ -23,57 +23,61 @@ VALID_FORMAT = ["blast-xml", "interproscan-xml"]
 class Command(HistoryCommandMixin, BaseCommand):
     """Load similarity file."""
 
-    help = "Load similarity file"
+    help = "Load similarity search results (BLAST/InterproScan) into the database"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
-            "--file", help="Blast or InterproScan XML file", required=True, type=str
+            "--file",
+            help="Path to the Blast or InterproScan XML file",
+            required=True,
+            type=str,
         )
         parser.add_argument(
             "--format", help="blast-xml or interproscan-xml", required=True, type=str
         )
         parser.add_argument(
             "--so_query",
-            help="Query Sequence Ontology term. "
-            "eg. assembly, mRNA, CDS, polypeptide",
+            help="Sequence Ontology (SO) term for the query (e.g., mRNA, polypeptide)",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--so_subject",
-            help="Subject Sequence Ontology "
-            "term. eg. assembly, mRNA, CDS, polypeptide "
-            "(protein_match if loading InterproScan or BLAST "
-            "xml file)",
+            help="Sequence Ontology (SO) term for the subject (e.g., polypeptide, protein_match)",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--organism_query",
-            help="Query's organism name. "
-            "eg. 'Oryza sativa'. Cannot be multispecies'.",
+            help="Scientific name of the query organism (e.g., 'Oryza sativa')",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--organism_subject",
-            help="Subject's organism "
-            "name eg. 'Oryza sativa'. If using a multispecies "
-            "database put 'multispecies multispecies'.",
+            help="Scientific name of the subject organism (use 'multispecies multispecies' for databases)",
             required=True,
             type=str,
         )
         parser.add_argument("--program", help="Program", required=True, type=str)
         parser.add_argument(
-            "--programversion", help="Program version", required=True, type=str
+            "--programversion",
+            help="Version of the program used",
+            required=True,
+            type=str,
         )
         parser.add_argument("--name", help="Name", required=False, type=str)
         parser.add_argument(
             "--description", help="Description", required=False, type=str
         )
         parser.add_argument("--algorithm", help="Algorithm", required=False, type=str)
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(
         self,
@@ -95,11 +99,13 @@ class Command(HistoryCommandMixin, BaseCommand):
         """Execute the main function."""
         filename = os.path.basename(file)
         if organism_query == "mutispecies multispecies":
-            raise CommandError("Query's organism cannot be multispecies")
+            raise CommandError("Query organism cannot be 'multispecies'.")
 
         if format not in VALID_FORMAT:
             raise CommandError(
-                "The format is not valid. Please choose: {}".format(VALID_FORMAT)
+                "Invalid format. Please specify one of: {}".format(
+                    ", ".join(VALID_FORMAT)
+                )
             )
         FileValidator().validate(file)
         try:
@@ -130,10 +136,12 @@ class Command(HistoryCommandMixin, BaseCommand):
                     pool.submit(similarity_file.store_bio_searchio_query_result, record)
                 )
         if verbosity > 0:
-            self.stdout.write("Loading")
+            self.stdout.write("Loading data...")
         for task in tqdm(as_completed(tasks), total=len(tasks)):
             task.result()
         pool.shutdown()
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))
+            self.stdout.write(
+                self.style.SUCCESS("Successfully processed {}".format(filename))
+            )

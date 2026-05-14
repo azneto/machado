@@ -21,17 +21,24 @@ from machado.loaders.publication import PublicationLoader
 class Command(HistoryCommandMixin, BaseCommand):
     """Load Publication file."""
 
-    help = "Load Publication file"
+    help = "Load publication data from a BibTeX file"
 
     def add_arguments(self, parser):
         """Define the arguments."""
-        parser.add_argument("--file", help="BibTeX File", required=True, type=str)
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--file", help="Path to the BibTeX file", required=True, type=str
+        )
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(self, file=str, verbosity: int = 1, cpu: int = 1, **options):
         """Execute the main function."""
         if verbosity > 0:
-            self.stdout.write("Preprocessing")
+            self.stdout.write("Preprocessing data...")
 
         FileValidator().validate(file)
         # filename = os.path.basename(file)
@@ -50,7 +57,7 @@ class Command(HistoryCommandMixin, BaseCommand):
             if entry["ENTRYTYPE"]:
                 tasks.append(pool.submit(bibtex.store_bibtex_entry, entry))
         if verbosity > 0:
-            self.stdout.write("Loading")
+            self.stdout.write("Loading data...")
         for task in tqdm(
             as_completed(tasks),
             total=len(tasks),
@@ -60,4 +67,4 @@ class Command(HistoryCommandMixin, BaseCommand):
         pool.shutdown()
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done"))
+            self.stdout.write(self.style.SUCCESS("Successfully processed BibTeX file."))

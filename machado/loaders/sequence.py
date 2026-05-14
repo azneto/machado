@@ -67,7 +67,9 @@ class SequenceLoader(object):
             soterm_obj = Cvterm.objects.get(name=soterm, cv__name="sequence")
         except ObjectDoesNotExist as e:
             raise ImportingError(
-                "The soterm {} is not registered ({}).".format(soterm, e),
+                "The Sequence Ontology term '{}' is not registered. Details: {}".format(
+                    soterm, e
+                ),
                 file=self.filename,
             )
 
@@ -84,7 +86,7 @@ class SequenceLoader(object):
                 accession=seq_obj.id, soterm=soterm, organism=self.organism
             )
             raise ImportingError(
-                "The sequence {} is already registered.".format(seq_obj.id),
+                "Sequence '{}' is already registered.".format(seq_obj.id),
                 file=self.filename,
             )
         except ObjectDoesNotExist:
@@ -132,7 +134,7 @@ class SequenceLoader(object):
             )
         except ObjectDoesNotExist:
             raise ImportingError(
-                "The feature {} does NOT exist.".format(seq_obj.id), file=self.filename
+                "Feature '{}' does not exist.".format(seq_obj.id), file=self.filename
             )
 
         feature_obj = Feature.objects.get(feature_id=feature_id)

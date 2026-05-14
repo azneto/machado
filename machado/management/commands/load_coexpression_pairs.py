@@ -24,36 +24,32 @@ from machado.loaders.feature import FeatureLoader
 class Command(HistoryCommandMixin, BaseCommand):
     """Load LSTRAP output file pcc.mcl.txt results."""
 
-    help = """Load 'pcc.mcl.txt' output result file from LSTrAP.
-The 'pcc.mcl.txt' file is headless and have the format as follows:
-AT2G44195.1.TAIR10	AT1G30080.1.TAIR10	0.18189286870895194
-AT2G44195.1.TAIR10	AT5G24750.1.TAIR10	0.1715779378273995
-...
-and so on.
-The value of the third column is a Pearson correlation coefficient subtracted
-from 0.7 (PCC - 0.7). To obtain the original PCC value, it must be added 0.7 to
-every value of the third column.
-The feature pairs from columns 1 and 2 need to be loaded previously."""
+    help = "Load LSTrAP 'pcc.mcl.txt' coexpression pairs output file" ""
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
-            "--file", help="'pcc.mcl.txt' File", required=True, type=str
+            "--file", help="Path to the 'pcc.mcl.txt' file", required=True, type=str
         )
         parser.add_argument(
             "--organism",
-            help="Scientific name (e.g.: 'Oryza sativa')",
+            help="Scientific name of the species (e.g., 'Oryza sativa')",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--soterm",
-            help="sequence ontology term 'e.g. mRNA'",
+            help="Sequence Ontology (SO) term (e.g., 'mRNA')",
             required=False,
             default="mRNA",
             type=str,
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(
         self,
@@ -115,4 +111,6 @@ The feature pairs from columns 1 and 2 need to be loaded previously."""
                 tasks.clear()
             pool.shutdown()
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))
+            self.stdout.write(
+                self.style.SUCCESS("Successfully processed {}".format(filename))
+            )

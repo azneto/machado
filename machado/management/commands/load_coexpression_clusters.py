@@ -27,35 +27,35 @@ from machado.loaders.feature import FeatureLoader
 class Command(HistoryCommandMixin, BaseCommand):
     """Load LSTRAP output file mcl.clusters.txt results."""
 
-    help = """Load 'mcl.clusters.txt' output result file from LSTrAP.
-The 'mcl.clusters.txt' is a tab separated, headless file and have the format
-as follows (each line is a cluster):
-ath_coexpr_mcl_1:    AT3G18715.1.TAIR10	AT3G08790.1.TAIR10  AT5G42230.1.TAIR10
-ath_coexpr_mcl_2:    AT1G27040.1.TAIR10	AT1G71692.1.TAIR10
-ath_coexpr_mcl_3:    AT5G24750.1.TAIR10
-...
-and so on.
-The features need to be loaded previously or won't be registered."""
+    help = "Load LSTrAP 'mcl.clusters.txt' coexpression clusters output file" ""
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
-            "--file", help="'mcl.clusters.txt' File", required=True, type=str
+            "--file",
+            help="Path to the 'mcl.clusters.txt' file",
+            required=True,
+            type=str,
         )
         parser.add_argument(
             "--soterm",
-            help="sequence ontology term 'e.g. mRNA'",
+            help="Sequence Ontology (SO) term (e.g., 'mRNA')",
             required=False,
             default="mRNA",
             type=str,
         )
         parser.add_argument(
             "--organism",
-            help="Scientific name (e.g.: 'Oryza sativa')",
+            help="Scientific name of the species (e.g., 'Oryza sativa')",
             required=True,
             type=str,
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(
         self,
@@ -113,7 +113,7 @@ The features need to be loaded previously or won't be registered."""
                 group_field = re.match(r"^(\w+)\:", fields[0])
                 name = group_field.group(1)
             else:
-                raise CommandError("Cluster identification has problems.")
+                raise CommandError("Invalid cluster identification format in file.")
             # remove cluster name before loading
             fields.pop(0)
             # get cvterm for correlation
@@ -128,10 +128,12 @@ The features need to be loaded previously or won't be registered."""
                 )
             )
         if verbosity > 0:
-            self.stdout.write("Loading")
+            self.stdout.write("Loading data...")
         for task in tqdm(as_completed(tasks), total=len(tasks)):
             if task.result():
                 raise (task.result())
         pool.shutdown()
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))
+            self.stdout.write(
+                self.style.SUCCESS("Successfully processed {}".format(filename))
+            )

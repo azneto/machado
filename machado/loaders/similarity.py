@@ -105,7 +105,9 @@ class SimilarityLoader(object):
                 )
             except ObjectDoesNotExist as e2:
                 raise ImportingError(
-                    "Query {} {}".format(hsp.query_id, hsp.query_description),
+                    "Query feature '{}' ({}) not found.".format(
+                        hsp.query_id, hsp.query_description
+                    ),
                     file=self.filename,
                     context="{} | {}".format(e1, e2),
                 )
@@ -127,7 +129,9 @@ class SimilarityLoader(object):
                 )
             except ObjectDoesNotExist as e2:
                 raise ImportingError(
-                    "Subject {} {}".format(hsp.hit_id, hsp.hit_description),
+                    "Subject feature '{}' ({}) not found.".format(
+                        hsp.hit_id, hsp.hit_description
+                    ),
                     file=self.filename,
                     context="{} | {}".format(e1, e2),
                 )

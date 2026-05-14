@@ -15,13 +15,13 @@ from machado.loaders.common import retrieve_organism
 class Command(HistoryCommandMixin, BaseCommand):
     """Remove organism."""
 
-    help = "Remove organism"
+    help = "Remove an organism from the database"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
             "--organism",
-            help="Species name (eg. Homo sapiens, Mus musculus)",
+            help="Scientific name of the species (e.g., Homo sapiens)",
             required=True,
             type=str,
         )
@@ -33,7 +33,13 @@ class Command(HistoryCommandMixin, BaseCommand):
             if organism_obj:
                 organism_obj.delete()
                 if verbosity > 0:
-                    self.stdout.write(self.style.SUCCESS("{} removed".format(organism)))
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            "Organism '{}' removed successfully.".format(organism)
+                        )
+                    )
 
         except ObjectDoesNotExist:
-            raise CommandError("Organism does not exist in database!")
+            raise CommandError(
+                "Organism '{}' does not exist in the database.".format(organism)
+            )

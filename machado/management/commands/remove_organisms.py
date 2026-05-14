@@ -15,12 +15,15 @@ from machado.management.commands._base import HistoryCommandMixin
 class Command(HistoryCommandMixin, BaseCommand):
     """Remove organisms file."""
 
-    help = "Remove organisms file"
+    help = "Remove organisms associated with a specific database source"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
-            "--dbname", help="Organism DB name", required=True, type=str
+            "--dbname",
+            help="Name of the organism database source to remove",
+            required=True,
+            type=str,
         )
 
     def handle(self, dbname: str, verbosity: int = 1, **options):
@@ -40,6 +43,10 @@ class Command(HistoryCommandMixin, BaseCommand):
             db.delete()
 
             if verbosity > 0:
-                self.stdout.write(self.style.SUCCESS("Done"))
+                self.stdout.write(
+                    self.style.SUCCESS("Operation completed successfully.")
+                )
         except ObjectDoesNotExist:
-            raise CommandError("Cannot remove {} (not registered)".format(dbname))
+            raise CommandError(
+                "Cannot remove source '{}' (not found in database).".format(dbname)
+            )

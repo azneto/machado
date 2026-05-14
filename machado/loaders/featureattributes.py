@@ -91,7 +91,7 @@ class FeatureAttributesLoader(object):
             self.filter = VALID_QTL_ATTRS
         else:
             raise ImportingError(
-                "Attributes type required: (eg. genome, polymorphism, qtl)"
+                "Invalid attribute type. Please specify one of: genome, polymorphism, qtl."
             )
 
         # Retrieve DOI's Dbxref
@@ -101,15 +101,15 @@ class FeatureAttributesLoader(object):
             try:
                 dbxref_doi = Dbxref.objects.get(accession=doi)
             except ObjectDoesNotExist:
-                raise ImportingError("{} not registered.".format(doi))
+                raise ImportingError("DOI '{}' is not registered.".format(doi))
             try:
                 pub_dbxref_doi = PubDbxref.objects.get(dbxref=dbxref_doi)
             except ObjectDoesNotExist:
-                raise ImportingError("{} not registered.".format(doi))
+                raise ImportingError("DOI '{}' is not registered.".format(doi))
             try:
                 self.pub = Pub.objects.get(pub_id=pub_dbxref_doi.pub_id)
             except ObjectDoesNotExist:
-                raise ImportingError("{} not registered.".format(doi))
+                raise ImportingError("DOI '{}' is not registered.".format(doi))
         else:
             self.pub, created = Pub.objects.get_or_create(
                 miniref="null",
@@ -205,7 +205,9 @@ class FeatureAttributesLoader(object):
                     )
                     pub_obj = Pub.objects.get(PubDbxref_pub_Pub__dbxref=doi_obj)
                 except ObjectDoesNotExist:
-                    raise ImportingError("{} not registered.".format(attrs[key]))
+                    raise ImportingError(
+                        "DOI '{}' is not registered.".format(attrs[key])
+                    )
 
                 FeaturePub.objects.get_or_create(feature_id=feature_id, pub=pub_obj)
 

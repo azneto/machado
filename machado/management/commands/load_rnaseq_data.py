@@ -23,32 +23,25 @@ from machado.loaders.exceptions import ImportingError
 class Command(HistoryCommandMixin, BaseCommand):
     """Load RNA-seq expression tpm data from LSTrAP exp_matrix.tpm.txt file."""
 
-    help = """Load RNA-seq exp_matrix.tpm result file. This file is tabular
-    and has SRR (SRA database) experiment IDs in columns and genes in lines.
-    E.g.:
-
-    gene    SRR5167848.htseq        SRR2302912.htseq    ...
-    AT2G44195.1.TAIR10  0.0 0.6936967934559419  ...
-    AT1G25375.1.TAIR10  2.369615950632963   10.7523002985671 ...
-    ...
-
-    The information about the features (genes) and assays (SRR experiments)
-    need to be provided before, using 'python manage.py load_rnaseq_info'."""
+    help = "Load RNA-seq expression data (TPM/counts) from a tab-separated file"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
-            "--file", help="tabular text file with gene counts", required=True, type=str
+            "--file",
+            help="Path to the tabular text file containing gene counts",
+            required=True,
+            type=str,
         )
         parser.add_argument(
             "--organism",
-            help="Scientific name (e.g.: 'Oryza sativa')",
+            help="Scientific name of the species (e.g., 'Oryza sativa')",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--programversion",
-            help="Version of the software (e.g.: '1.3')",
+            help="Software version (e.g., '1.3')",
             required=True,
             type=str,
         )
@@ -59,36 +52,40 @@ class Command(HistoryCommandMixin, BaseCommand):
         parser.add_argument("--algorithm", help="Algorithm", required=False, type=str)
         parser.add_argument(
             "--assaydb",
-            help="Assay database info (e.g.: 'SRA')",
+            help="Database name for assay information (e.g., 'SRA')",
             required=False,
             type=str,
         )
         parser.add_argument(
             "--timeexecuted",
-            help="Time software was run. Mandatory format: e.g.: 'Oct-16-2016'",
+            help="Execution date (format: 'Oct-16-2016')",
             required=False,
             type=str,
         )
         parser.add_argument(
             "--program",
-            help="Name of the software (e.g.: 'LSTrAP')",
+            help="Name of the software (e.g., 'LSTrAP')",
             default="LSTrAP",
             type=str,
         )
         parser.add_argument(
             "--norm",
-            help="Normalized data: 1-yes (tpm, fpkm, etc.); "
-            "0-no (raw counts); default is 1)",
+            help="Data normalization: 1 for yes (TPM, FPKM, etc.), 0 for no (raw counts)",
             default=1,
             type=int,
         )
         parser.add_argument(
             "--ignorenotfound",
-            help="Don't raise error and exit if feature not found",
+            help="Continue processing if a feature is not found",
             required=False,
             action="store_true",
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(
         self,
@@ -177,7 +174,7 @@ class Command(HistoryCommandMixin, BaseCommand):
                     )
 
         if verbosity > 0:
-            self.stdout.write("Loading")
+            self.stdout.write("Loading data...")
 
         for task in tqdm(as_completed(tasks), total=len(tasks)):
             try:
@@ -193,7 +190,9 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("List of features not found:")
             for item in not_found:
-                self.stdout.write(f"{item}\n")
+                self.stdout.write("- {}\n".format(item))
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done."))
+            self.stdout.write(
+                self.style.SUCCESS("Successfully processed {}".format(filename))
+            )

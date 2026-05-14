@@ -15,11 +15,13 @@ from machado.management.commands._base import HistoryCommandMixin
 class Command(HistoryCommandMixin, BaseCommand):
     """Remove publication."""
 
-    help = "Remove publication"
+    help = "Remove a publication from the database using its DOI"
 
     def add_arguments(self, parser):
         """Define the arguments."""
-        parser.add_argument("--doi", help="doi", required=True, type=str)
+        parser.add_argument(
+            "--doi", help="DOI of the publication to remove", required=True, type=str
+        )
 
     def handle(self, doi: str, verbosity: int = 1, **options):
         """Execute the main function."""
@@ -29,6 +31,10 @@ class Command(HistoryCommandMixin, BaseCommand):
             Pub.objects.get(pub_id=pub_dbxref.pub_id).delete()
 
             if verbosity > 0:
-                self.stdout.write(self.style.SUCCESS("{} removed".format(doi)))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        "Publication with DOI '{}' successfully removed.".format(doi)
+                    )
+                )
         except ObjectDoesNotExist:
-            raise CommandError("DOI does not exist in database!")
+            raise CommandError("Publication with DOI '{}' not found.".format(doi))

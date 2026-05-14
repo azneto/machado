@@ -30,11 +30,13 @@ import os
 class Command(HistoryCommandMixin, BaseCommand):
     """Remove file."""
 
-    help = "Remove file (CASCADE)"
+    help = "Remove records and associated data linked to a specific file (CASCADE)"
 
     def add_arguments(self, parser):
         """Define the arguments."""
-        parser.add_argument("--name", help="File name", required=True, type=str)
+        parser.add_argument(
+            "--name", help="Name of the file to be removed", required=True, type=str
+        )
 
     def handle(self, name: str, verbosity: int = 0, **options):
         """Execute the main function."""
@@ -42,8 +44,9 @@ class Command(HistoryCommandMixin, BaseCommand):
         # Handling Features
         if verbosity > 1:
             self.stdout.write(
-                "Features: deleting {} and every "
-                "child record (CASCADE)".format(filename)
+                "Features: Deleting records linked to '{}' (CASCADE)...".format(
+                    filename
+                )
             )
         try:
             Feature.objects.filter(
@@ -52,13 +55,14 @@ class Command(HistoryCommandMixin, BaseCommand):
             Dbxrefprop.objects.filter(value=filename).delete()
         except ObjectDoesNotExist:
             raise CommandError(
-                "Features: cannot remove {} (not registered)".format(filename)
+                "Features: Cannot remove '{}' (not found in database).".format(filename)
             )
         # Handling Projects
         if verbosity > 1:
             self.stdout.write(
-                "Projects: deleting {} and every "
-                "child record (CASCADE)".format(filename)
+                "Projects: Deleting records linked to '{}' (CASCADE)...".format(
+                    filename
+                )
             )
         try:
             project_ids = list(
@@ -71,13 +75,12 @@ class Command(HistoryCommandMixin, BaseCommand):
             Projectprop.objects.filter(value=filename).delete()
         except ObjectDoesNotExist:
             raise CommandError(
-                "Projects: cannot remove {} (not registered)".format(filename)
+                "Projects: Cannot remove '{}' (not found in database).".format(filename)
             )
         # Handling Assay
         if verbosity > 1:
             self.stdout.write(
-                "Assay: deleting {} and every "
-                "child record (CASCADE)".format(filename)
+                "Assays: Deleting records linked to '{}' (CASCADE)...".format(filename)
             )
         try:
             assay_ids = list(
@@ -89,13 +92,14 @@ class Command(HistoryCommandMixin, BaseCommand):
             Assay.objects.filter(assay_id__in=assay_ids).delete()
         except ObjectDoesNotExist:
             raise CommandError(
-                "Assays: cannot remove {} (not registered)".format(filename)
+                "Assays: Cannot remove '{}' (not found in database).".format(filename)
             )
         # Handling Biomaterial
         if verbosity > 1:
             self.stdout.write(
-                "Biomaterial: deleting {} and every "
-                "child record (CASCADE)".format(filename)
+                "Biomaterials: Deleting records linked to '{}' (CASCADE)...".format(
+                    filename
+                )
             )
         try:
             biomaterial_ids = list(
@@ -107,13 +111,16 @@ class Command(HistoryCommandMixin, BaseCommand):
             Biomaterialprop.objects.filter(value=filename).delete()
         except ObjectDoesNotExist:
             raise CommandError(
-                "Biomaterials: cannot remove {} (not registered)".format(filename)
+                "Biomaterials: Cannot remove '{}' (not found in database).".format(
+                    filename
+                )
             )
         # Handling Analysis
         if verbosity > 1:
             self.stdout.write(
-                "Analysis: deleting {} and every "
-                "child record (CASCADE)".format(filename)
+                "Analysis: Deleting records linked to '{}' (CASCADE)...".format(
+                    filename
+                )
             )
         try:
             analysis_ids = list(
@@ -124,8 +131,8 @@ class Command(HistoryCommandMixin, BaseCommand):
             Analysis.objects.filter(analysis_id__in=analysis_ids).delete()
         except ObjectDoesNotExist:
             raise CommandError(
-                "Analysis: cannot remove {} (not registered)".format(filename)
+                "Analysis: Cannot remove '{}' (not found in database).".format(filename)
             )
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done"))
+            self.stdout.write(self.style.SUCCESS("Operation completed successfully."))

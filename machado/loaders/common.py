@@ -35,12 +35,12 @@ class FileValidator(object):
     def _exists(self, file_path: str) -> None:
         """Check whether a file exists."""
         if not os.path.exists(file_path):
-            raise ImportingError("does not exist", file=file_path)
+            raise ImportingError("The specified file does not exist.", file=file_path)
 
     def _is_file(self, file_path: str) -> None:
         """Check whether file is actually a file type."""
         if not os.path.isfile(file_path):
-            raise ImportingError("is not a file", file=file_path)
+            raise ImportingError("The provided path is not a file.", file=file_path)
 
     def _is_readable(self, file_path: str) -> None:
         """Check file is readable."""
@@ -48,7 +48,10 @@ class FileValidator(object):
             f = open(file_path, "r")
             f.close()
         except IOError:
-            raise ImportingError("is not readable", file=file_path)
+            raise ImportingError(
+                "The file is not readable. Please check file permissions.",
+                file=file_path,
+            )
 
 
 class FieldsValidator(object):
@@ -63,7 +66,7 @@ class FieldsValidator(object):
         """Check if number of fields are correct."""
         if len(fields) != nfields:
             raise ImportingError(
-                f"Provided number of fields {len(fields)} differ from expected {nfields}",
+                f"Found {len(fields)} fields, but expected {nfields}.",
                 context="tabular_validation",
             )
 
@@ -72,7 +75,7 @@ class FieldsValidator(object):
         for field in fields:
             if field is None or field == "":
                 raise ImportingError(
-                    "Found null or empty field",
+                    "Empty or null field detected in column '{}'.".format(counter),
                     field=str(counter),
                     context="tabular_validation",
                 )
@@ -111,7 +114,7 @@ def insert_organism(
         )
         if spp is not None:
             raise ImportingError(
-                "Organism already registered ({} {})!".format(genus, species)
+                "Organism '{} {}' is already registered.".format(genus, species)
             )
     except ObjectDoesNotExist:
         organism = Organism.objects.create(
@@ -139,7 +142,7 @@ def retrieve_organism(organism: str) -> Organism:
             infraspecific_name = " ".join(aux[2:])
     except ValueError:
         raise ValueError(
-            "The organism genus and species should be separated by a single space"
+            "The organism scientific name must include both genus and species separated by a space."
         )
     except AttributeError as e:
         raise AttributeError(e)
@@ -149,7 +152,7 @@ def retrieve_organism(organism: str) -> Organism:
             genus=genus, species=species, infraspecific_name=infraspecific_name
         )
     except ObjectDoesNotExist:
-        raise ObjectDoesNotExist("{} not registered.".format(organism))
+        raise ObjectDoesNotExist("Organism '{}' is not registered.".format(organism))
     return organism_obj
 
 
@@ -172,7 +175,7 @@ def retrieve_feature_id(
         pass
     except MultipleObjectsReturned:
         raise MultipleObjectsReturned(
-            "{} {} matches multiple features".format(soterm, accession)
+            "Multiple features found matching {} '{}'.".format(soterm, accession)
         )
 
     # soterm-feature.uniquename
@@ -187,7 +190,7 @@ def retrieve_feature_id(
         pass
     except MultipleObjectsReturned:
         raise MultipleObjectsReturned(
-            "{} {} matches multiple features".format(soterm, accession)
+            "Multiple features found matching {} '{}'.".format(soterm, accession)
         )
 
     # feature.name
@@ -202,7 +205,7 @@ def retrieve_feature_id(
         pass
     except MultipleObjectsReturned:
         raise MultipleObjectsReturned(
-            "{} {} matches multiple features".format(soterm, accession)
+            "Multiple features found matching {} '{}'.".format(soterm, accession)
         )
 
     # feature.dbxref.accession
@@ -217,7 +220,7 @@ def retrieve_feature_id(
         pass
     except MultipleObjectsReturned:
         raise MultipleObjectsReturned(
-            "{} {} matches multiple features".format(soterm, accession)
+            "Multiple features found matching {} '{}'.".format(soterm, accession)
         )
 
     # featuredbxref.dbxref.accession
@@ -229,10 +232,12 @@ def retrieve_feature_id(
             feature__organism=organism,
         ).feature_id
     except ObjectDoesNotExist:
-        raise ObjectDoesNotExist("{} {} does not exist".format(soterm, accession))
+        raise ObjectDoesNotExist(
+            "Feature {} '{}' does not exist.".format(soterm, accession)
+        )
     except MultipleObjectsReturned:
         raise MultipleObjectsReturned(
-            "{} {} matches multiple features".format(soterm, accession)
+            "Multiple features found matching {} '{}'.".format(soterm, accession)
         )
 
 
@@ -249,4 +254,8 @@ def retrieve_cvterm(cv: str, term: str) -> Cvterm:
         return Cvtermsynonym.objects.get(synonym=term, cvterm__cv__name=cv).cvterm
 
     except ObjectDoesNotExist:
-        raise ImportingError("ontology term not found", context=cv, field=term)
+        raise ImportingError(
+            "Ontology term '{}' not found in vocabulary '{}'.".format(term, cv),
+            context=cv,
+            field=term,
+        )

@@ -99,6 +99,6 @@ class OrganismLoader(object):
             doi_obj = Dbxref.objects.get(accession=doi, db__name="DOI")
             pub_obj = Pub.objects.get(PubDbxref_pub_Pub__dbxref=doi_obj)
         except ObjectDoesNotExist:
-            raise ImportingError("{} not registered.".format(doi))
+            raise ImportingError("DOI '{}' is not registered.".format(doi))
 
         OrganismPub.objects.get_or_create(organism=organism_obj, pub=pub_obj)

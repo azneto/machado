@@ -125,13 +125,15 @@ class FeatureLoaderTest(TestCase):
         db_doi = Db.objects.get_or_create(name="DOI")[0]
         Dbxref.objects.get_or_create(db=db_doi, accession="10.1234/missing_pub")
         with self.assertRaisesRegex(
-            ImportingError, "10.1234/missing_pub not registered"
+            ImportingError, "DOI '10.1234/missing_pub' is not registered"
         ):
             FeatureLoaderBase("GFF_P_FAIL", "test.gff", doi="10.1234/missing_pub")
 
     def test_feature_loader_init_fail(self):
         """Test feature loader init fail."""
-        with self.assertRaisesRegex(ImportingError, "requires an organism parameter"):
+        with self.assertRaisesRegex(
+            ImportingError, "FeatureLoader requires a valid organism parameter"
+        ):
             FeatureLoader("GFF_INIT_FAIL", "test.gff", None)
 
     @patch("machado.loaders.feature.FeatureAttributesLoader")
@@ -179,7 +181,9 @@ class FeatureLoaderTest(TestCase):
         tabix_feat.attributes = "ID=F_SO_F"
         mock_attrs = MockAttrLoader.return_value
         mock_attrs.get_attributes.return_value = {"id": "F_SO_F"}
-        with self.assertRaisesRegex(ImportingError, "is not a sequence ontology term"):
+        with self.assertRaisesRegex(
+            ImportingError, "'nonexistent_so' is not a valid Sequence Ontology term"
+        ):
             loader.store_tabix_GFF_feature(tabix_feat, qtl=False)
 
     @patch("machado.loaders.feature.FeatureAttributesLoader")
@@ -541,7 +545,9 @@ class FeatureLoaderTest(TestCase):
         tabix_feat.info = "OTHER=VALUE"
         mock_attrs = MockAttrLoader.return_value
         mock_attrs.get_attributes.return_value = {"other": "value"}
-        with self.assertRaisesRegex(ImportingError, "Impossible to get the attribute"):
+        with self.assertRaisesRegex(
+            ImportingError, "Unable to identify the variation type attribute"
+        ):
             loader.store_tabix_VCF_feature(tabix_feat)
 
     @patch("machado.loaders.feature.FeatureAttributesLoader")
@@ -627,7 +633,7 @@ class FeatureLoaderTest(TestCase):
         loader = FeatureLoader("GFF_DBX_I", "test.gff", self.org)
         mRNA_type = self.ensure_cvterm("mRNA_DI", self.cv_seq)
         self.create_feat("f_dbx_inv_1", mRNA_type)
-        with self.assertRaisesRegex(ImportingError, "Incorrect DBxRef"):
+        with self.assertRaisesRegex(ImportingError, "Invalid DBxRef format"):
             loader.store_feature_dbxref("f_dbx_inv_1", "mRNA_DI", "INVALID_DBX")
 
     def test_store_tabix_GFF_feature_parent_not_found(self):
@@ -729,6 +735,7 @@ class FeatureLoaderTest(TestCase):
         mock_attrs.get_attributes.return_value = {"vc": "nonexistent_so_term"}
 
         with self.assertRaisesRegex(
-            ImportingError, r"\(sequence\).*ontology term not found"
+            ImportingError,
+            r"\(sequence\).*Ontology term 'nonexistent_so_term' not found",
         ):
             loader.store_tabix_VCF_feature(tabix_mock)

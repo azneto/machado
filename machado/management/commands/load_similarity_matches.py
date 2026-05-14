@@ -27,17 +27,25 @@ warnings.simplefilter("ignore", BiopythonWarning)
 class Command(HistoryCommandMixin, BaseCommand):
     """Load similarity multispecies matches."""
 
-    help = "Load similiarity multispecies matches"
+    help = "Load similarity multispecies matches from BLAST or InterproScan XML files"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
-            "--file", help="BLAST/InterproScan XML file", required=True, type=str
+            "--file",
+            help="Path to the BLAST or InterproScan XML file",
+            required=True,
+            type=str,
         )
         parser.add_argument(
             "--format", help="blast-xml or interproscan-xml", required=True, type=str
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(
         self, file: str, format: str, cpu: int = 1, verbosity: int = 1, **options
@@ -51,8 +59,9 @@ class Command(HistoryCommandMixin, BaseCommand):
             source = "InterproScan_source"
         else:
             raise CommandError(
-                "Format allowed options are blast-xml or "
-                "interproscan-xml only, not {}".format(format)
+                "Invalid format: '{}'. Allowed options are 'blast-xml' or 'interproscan-xml'.".format(
+                    format
+                )
             )
 
         filename = os.path.basename(file)
@@ -72,7 +81,7 @@ class Command(HistoryCommandMixin, BaseCommand):
                     pool.submit(feature_file.store_bio_searchio_hit, hit, record.target)
                 )
         if verbosity > 0:
-            self.stdout.write("Loading")
+            self.stdout.write("Loading data...")
         for task in tqdm(as_completed(tasks), total=len(tasks)):
             task.result()
         pool.shutdown()
@@ -84,4 +93,6 @@ class Command(HistoryCommandMixin, BaseCommand):
                 )
             )
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))
+            self.stdout.write(
+                self.style.SUCCESS("Successfully processed {}".format(filename))
+            )

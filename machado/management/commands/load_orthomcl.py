@@ -22,17 +22,19 @@ from machado.loaders.feature import MultispeciesFeatureLoader
 class Command(HistoryCommandMixin, BaseCommand):
     """Load OrthoMCL groups.txt results."""
 
-    help = """Load 'groups.txt' output result file from orthoMCL.
-The 'groups.txt' file is headless and have the format as follows:
-nameofthegroup1: featuremember1 featuremember2 featuremember3
-nameofthegroup2: featuremember4 featuremember5 ...
-and so on.
-The feature members need to be loaded previously."""
+    help = "Load OrthoMCL 'groups.txt' result file" ""
 
     def add_arguments(self, parser):
         """Define the arguments."""
-        parser.add_argument("--file", help="'groups.txt' File", required=True, type=str)
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--file", help="Path to the 'groups.txt' file", required=True, type=str
+        )
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(self, file: str, cpu: int = 1, verbosity: int = 0, **options):
         """Execute the main function."""
@@ -75,7 +77,9 @@ The feature members need to be loaded previously."""
                 for field in fields:
                     members.append(field)
             else:
-                raise CommandError("Cluster file has fields problems. Please, check.")
+                raise CommandError(
+                    "Invalid cluster file format. Please check the input file."
+                )
             # only orthologous groups with 2 or more members allowed
             if len(members) > 1:
                 tasks.append(
@@ -88,11 +92,13 @@ The feature members need to be loaded previously."""
                     )
                 )
         if verbosity > 0:
-            self.stdout.write("Loading")
+            self.stdout.write("Loading data...")
         for task in tqdm(as_completed(tasks), total=len(tasks)):
             if task.result():
                 e = task.result()
                 raise (e)
         pool.shutdown()
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))
+            self.stdout.write(
+                self.style.SUCCESS("Successfully processed {}".format(filename))
+            )

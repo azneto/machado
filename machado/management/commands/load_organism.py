@@ -20,22 +20,33 @@ from machado.loaders.organism import OrganismLoader
 class Command(HistoryCommandMixin, BaseCommand):
     """Load organism file."""
 
-    help = "Load organism file"
+    help = "Load taxonomy data from an NCBI-style names.dmp file"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
-            "--file", help="names file <e.g.: names.dmp>", required=True, type=str
+            "--file",
+            help="Path to the names file (e.g., names.dmp)",
+            required=True,
+            type=str,
         )
         parser.add_argument(
-            "--name", help="DB name <e.g.: DB:NCBI_taxonomy>", required=True, type=str
+            "--name",
+            help="Database name (e.g., DB:NCBI_taxonomy)",
+            required=True,
+            type=str,
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(self, file: str, name: str, verbosity: int = 1, cpu: int = 1, **options):
         """Execute the main function."""
         if verbosity > 0:
-            self.stdout.write("Preprocessing")
+            self.stdout.write("Preprocessing data...")
 
         FileValidator().validate(file)
         organism_db = OrganismLoader(organism_db=name)
@@ -88,11 +99,13 @@ class Command(HistoryCommandMixin, BaseCommand):
             )
 
         if verbosity > 0:
-            self.stdout.write("Loading names file")
+            self.stdout.write("Loading data...")
         for task in tqdm(as_completed(tasks), total=len(tasks)):
             if task.result():
                 e = task.result()
                 raise (e)
         pool.shutdown()
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done"))
+            self.stdout.write(
+                self.style.SUCCESS("Successfully processed taxonomy data.")
+            )

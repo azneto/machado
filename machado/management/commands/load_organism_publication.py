@@ -19,24 +19,27 @@ from machado.loaders.organism import OrganismLoader
 class Command(HistoryCommandMixin, BaseCommand):
     """Load organism publication file."""
 
-    help = "Load two-column tab separated file containing organism and "
-    "publication DOI."
+    help = "Load organism-publication associations from a tab-separated file"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
             "--file",
-            help="Two-column tab separated file. "
-            "(organism.dbxref\\tpublication DOI)",
+            help="Path to the tab-separated file (format: organism_id\\tDOI)",
             required=True,
             type=str,
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(self, file: str, verbosity: int = 1, cpu: int = 1, **options):
         """Execute the main function."""
         if verbosity > 0:
-            self.stdout.write("Preprocessing")
+            self.stdout.write("Preprocessing data...")
 
         FileValidator().validate(file)
         pool = ThreadPoolExecutor(max_workers=cpu)
@@ -53,10 +56,10 @@ class Command(HistoryCommandMixin, BaseCommand):
                 )
 
         if verbosity > 0:
-            self.stdout.write("Loading organism publications")
+            self.stdout.write("Loading data...")
         for task in tqdm(as_completed(tasks), total=len(tasks)):
             task.result()
         pool.shutdown()
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done"))
+            self.stdout.write(self.style.SUCCESS("Operation completed successfully."))

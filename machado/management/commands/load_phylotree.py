@@ -21,28 +21,34 @@ from machado.loaders.phylotree import PhylotreeLoader
 class Command(HistoryCommandMixin, BaseCommand):
     """Load phylonodes file."""
 
-    help = """Load phylonodes file. Each phylonode will get a left and right
-              indexes, which are calculated by walking down the entire tree
-              structure (reference: Chado load_ncbi_taxonomy.pl)"""
+    help = "Load phylotree nodes and calculate tree indexes"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
-            "--file", help="names file <e.g.: nodes.dmp>", required=True, type=str
+            "--file",
+            help="Path to the nodes file (e.g., nodes.dmp)",
+            required=True,
+            type=str,
         )
         parser.add_argument(
             "--name",
-            help="Set a phylotree name <e.g.: NCBI taxonomy tree>",
+            help="Phylotree name (e.g., NCBI taxonomy tree)",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--organismdb",
-            help="inform the Organism DB name <e.g.: DB:NCBI_taxonomy>",
+            help="Database name for organisms (e.g., DB:NCBI_taxonomy)",
             required=True,
             type=str,
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def walktree(self, node_id: int):
         """Walk the tree setting left_idx and right_idx."""
@@ -67,7 +73,7 @@ class Command(HistoryCommandMixin, BaseCommand):
     ):
         """Execute the main function."""
         if verbosity > 0:
-            self.stdout.write("Preprocessing")
+            self.stdout.write("Preprocessing data...")
 
         FileValidator().validate(file)
         phylotree = PhylotreeLoader(phylotree_name=name, organism_db=organismdb)
@@ -102,7 +108,7 @@ class Command(HistoryCommandMixin, BaseCommand):
         self.walktree(node_id=1)
 
         if verbosity > 0:
-            self.stdout.write("Loading")
+            self.stdout.write("Loading data...")
 
         pool = ThreadPoolExecutor(max_workers=cpu)
         tasks = list()
@@ -126,13 +132,12 @@ class Command(HistoryCommandMixin, BaseCommand):
                     self.nodes[tax_id]["phylonode_id"] = phylonode.phylonode_id
         except KeyError as e:
             raise CommandError(
-                "Could not calculate {}. Make it sure it is "
-                "possible to walk the entire tree "
-                "structure.".format(e)
+                "Could not calculate {}. Ensure the tree "
+                "structure is valid and traversable.".format(e)
             )
 
         if verbosity > 0:
-            self.stdout.write("Loading nodes relationships")
+            self.stdout.write("Loading node relationships...")
         tasks = list()
         # Load the nodes relationship info
         for key, data in self.nodes.items():
@@ -152,4 +157,4 @@ class Command(HistoryCommandMixin, BaseCommand):
         pool.shutdown()
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done"))
+            self.stdout.write(self.style.SUCCESS("Operation completed successfully."))
