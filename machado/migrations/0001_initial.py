@@ -6,6 +6,7 @@
 
 """Create database from chado default_schema.sql."""
 
+import gzip
 import os
 
 from django.db import connection, migrations
@@ -14,12 +15,13 @@ from django.db import connection, migrations
 def load_data_from_sql(apps, schema_editor):
     """Load data from sql."""
     file_path = os.path.join(
-        os.path.dirname(__file__), "../schemas/1.31/default_schema.sql"
+        os.path.dirname(__file__), "../schemas/1.31/default_schema.sql.gz"
     )
     sql_statement = ""
-    for line in open(file_path).readlines():
-        line = line.replace("@ boxrange", "<@ boxrange")
-        sql_statement += line
+    with gzip.open(file_path, "rt", encoding="utf-8") as f:
+        for line in f:
+            line = line.replace("@ boxrange", "<@ boxrange")
+            sql_statement += line
     with connection.cursor() as c:
         c.execute(sql_statement)
 

@@ -48,7 +48,7 @@ script-files = ["bin/fixChadoModel.py"]
 include = ["machado*"]
 
 [tool.setuptools.package-data]
-machado = ["schemas/**/*.sql", "static/**/*", "templates/**/*", "tests/data/**/*", "project_template/**/*"]
+machado = ["schemas/**/*.sql.gz", "static/**/*", "templates/**/*", "tests/data/**/*", "project_template/**/*"]
 
 [tool.coverage.run]
 branch = true
