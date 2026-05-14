@@ -8,7 +8,7 @@
 
 from datetime import datetime
 
-from django.db.utils import IntegrityError
+from django.db.utils import IntegrityError, DataError
 
 from machado.loaders.exceptions import ImportingError
 from machado.models import Arraydesign, Contact
@@ -49,6 +49,7 @@ class AssayLoader(object):
         self.cvterm_contained_in = Cvterm.objects.get(
             name="located in", cv__name="relationship"
         )
+        self.filename = None
 
     def store_assay(
         self,
@@ -60,6 +61,7 @@ class AssayLoader(object):
         description: str = None,
     ) -> Assay:
         """Store assay."""
+        self.filename = filename
         # get database for assay (e.g.: "SRA" - from NCBI)
         try:
             assaydb, created = Db.objects.get_or_create(name=db)
@@ -95,8 +97,8 @@ class AssayLoader(object):
             self.store_assayprop(
                 assay=assay, type_id=self.cvterm_contained_in.cvterm_id, value=filename
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)
         return assay
 
     def store_assay_project(self, assay: Assay, project: Project) -> None:
@@ -105,8 +107,8 @@ class AssayLoader(object):
             assayproject, created = AssayProject.objects.get_or_create(
                 assay=assay, project=project
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)
 
     def store_assay_biomaterial(
         self, assay: Assay, biomaterial: Biomaterial, rank: int = 0
@@ -119,8 +121,8 @@ class AssayLoader(object):
                 rank=rank,
                 defaults={"channel_id": None},
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)
 
     def store_assayprop(
         self, assay: Assay, type_id: int, value: str, rank: int = 0
@@ -130,5 +132,5 @@ class AssayLoader(object):
             Assayprop.objects.get_or_create(
                 assay=assay, type_id=type_id, value=value, rank=rank
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)

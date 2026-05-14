@@ -8,7 +8,7 @@
 
 from typing import Union
 
-from django.db.utils import IntegrityError
+from django.db.utils import IntegrityError, DataError
 
 from machado.loaders.common import retrieve_organism
 from machado.loaders.exceptions import ImportingError
@@ -23,6 +23,7 @@ class BiomaterialLoader(object):
 
     def __init__(self) -> None:
         """Execute the init function."""
+        self.filename = None
         self.cvterm_contained_in = Cvterm.objects.get(
             name="located in", cv__name="relationship"
         )
@@ -37,6 +38,7 @@ class BiomaterialLoader(object):
         description: str = None,
     ) -> Biomaterial:
         """Store biomaterial."""
+        self.filename = filename
         # db is not mandatory
         try:
             biodb, created = Db.objects.get_or_create(name=db)
@@ -76,8 +78,8 @@ class BiomaterialLoader(object):
                 type_id=self.cvterm_contained_in.cvterm_id,
                 value=filename,
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)
         return biomaterial
 
     def store_biomaterial_treatment(
@@ -92,8 +94,8 @@ class BiomaterialLoader(object):
             ) = BiomaterialTreatment.objects.get_or_create(
                 biomaterial=biomaterial, treatment=treatment, rank=rank
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)
 
     def store_biomaterialprop(
         self, biomaterial: Biomaterial, type_id: int, value: str, rank: int = 0
@@ -103,5 +105,5 @@ class BiomaterialLoader(object):
             biomaterialprop, created = Biomaterialprop.objects.get_or_create(
                 biomaterial=biomaterial, type_id=type_id, value=value, rank=rank
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)

@@ -11,7 +11,7 @@ from hashlib import md5
 
 from Bio.SeqRecord import SeqRecord
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.utils import IntegrityError
+from django.db.utils import IntegrityError, DataError
 
 from machado.loaders.common import retrieve_feature_id
 from machado.loaders.exceptions import ImportingError
@@ -50,11 +50,11 @@ class SequenceLoader(object):
             try:
                 dbxref_doi = Dbxref.objects.get(accession=doi)
             except ObjectDoesNotExist as e:
-                raise ImportingError(e)
+                raise ImportingError(str(e), file=self.filename)
             try:
                 self.pub_dbxref_doi = PubDbxref.objects.get(dbxref=dbxref_doi)
             except ObjectDoesNotExist as e:
-                raise ImportingError(e)
+                raise ImportingError(str(e), file=self.filename)
 
     def store_biopython_seq_record(
         self,
@@ -67,7 +67,8 @@ class SequenceLoader(object):
             soterm_obj = Cvterm.objects.get(name=soterm, cv__name="sequence")
         except ObjectDoesNotExist as e:
             raise ImportingError(
-                "The soterm {} is not registered ({}).".format(soterm, e)
+                "The soterm {} is not registered ({}).".format(soterm, e),
+                file=self.filename,
             )
 
         try:
@@ -83,7 +84,8 @@ class SequenceLoader(object):
                 accession=seq_obj.id, soterm=soterm, organism=self.organism
             )
             raise ImportingError(
-                "The sequence {} is already registered.".format(seq_obj.id)
+                "The sequence {} is already registered.".format(seq_obj.id),
+                file=self.filename,
             )
         except ObjectDoesNotExist:
             residues = seq_obj.seq
@@ -119,8 +121,8 @@ class SequenceLoader(object):
                     FeaturePub.objects.create(
                         feature=feature, pub_id=self.pub_dbxref_doi.pub_id
                     )
-                except IntegrityError as e:
-                    raise ImportingError(e)
+                except (IntegrityError, DataError) as e:
+                    raise ImportingError(str(e), file=self.filename)
 
     def add_sequence_to_feature(self, seq_obj: SeqRecord, soterm: str) -> None:
         """Store Biopython SeqRecord."""
@@ -129,7 +131,9 @@ class SequenceLoader(object):
                 accession=seq_obj.id, soterm=soterm, organism=self.organism
             )
         except ObjectDoesNotExist:
-            raise ImportingError("The feature {} does NOT exist.".format(seq_obj.id))
+            raise ImportingError(
+                "The feature {} does NOT exist.".format(seq_obj.id), file=self.filename
+            )
 
         feature_obj = Feature.objects.get(feature_id=feature_id)
         feature_obj.md5 = md5(str(seq_obj.seq).encode()).hexdigest()

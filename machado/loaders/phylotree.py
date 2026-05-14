@@ -9,7 +9,7 @@
 from typing import Dict, Optional, Tuple
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.utils import IntegrityError
+from django.db.utils import IntegrityError, DataError
 
 from machado.loaders.exceptions import ImportingError
 from machado.models import Cv, Cvterm, Db, Dbxref, Organism
@@ -39,8 +39,8 @@ class PhylotreeLoader(object):
             self.level_db, created = Db.objects.get_or_create(name="species_taxonomy")
             self.level_cv, created = Cv.objects.get_or_create(name="taxonomy")
             self.level_cvterms: Dict[str, Cvterm] = dict()
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e))
 
     def get_organism_by_accession(self, accession: int) -> Optional[Organism]:
         """Get organism by dbxref.accession."""
@@ -61,7 +61,7 @@ class PhylotreeLoader(object):
                 PhylonodeOrganism_phylonode_Phylonode__organism=organism
             )
         except ObjectDoesNotExist as e:
-            raise ImportingError(e)
+            raise ImportingError(str(e))
         return phylonode
 
     def update_parent_phylonode_id(self, phylonode_id: int, parent_id: int):

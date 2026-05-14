@@ -12,7 +12,7 @@ from typing import Dict, List, Union, Set
 
 from Bio.SearchIO._model import Hit
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.db.utils import IntegrityError
+from django.db.utils import IntegrityError, DataError
 from pysam.libctabixproxies import GTFProxy, VCFProxy
 
 from machado.loaders.common import retrieve_feature_id, retrieve_cvterm
@@ -37,11 +37,11 @@ class FeatureLoaderBase(object):
         self.ignored_attrs: Set[str] = set()
         self.ignored_goterms: Set[str] = set()
 
+        self.filename = filename
         try:
             self.db, created = Db.objects.get_or_create(name=source.upper())
-            self.filename = filename
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=filename)
 
         self.db_null, created = Db.objects.get_or_create(name="null")
         null_dbxref, created = Dbxref.objects.get_or_create(
@@ -77,11 +77,17 @@ class FeatureLoaderBase(object):
             try:
                 dbxref_doi = Dbxref.objects.get(accession=doi)
             except ObjectDoesNotExist:
-                raise ImportingError("{} not registered.".format(doi))
+                raise ImportingError(
+                    "{} not registered.".format(doi),
+                    file=self.filename,
+                )
             try:
                 self.pub_dbxref_doi = PubDbxref.objects.get(dbxref=dbxref_doi)
             except ObjectDoesNotExist:
-                raise ImportingError("{} not registered.".format(doi))
+                raise ImportingError(
+                    "{} not registered.".format(doi),
+                    file=self.filename,
+                )
 
 
 class FeatureLoader(FeatureLoaderBase):
@@ -96,11 +102,15 @@ class FeatureLoader(FeatureLoaderBase):
         if organism is not None:
             self.organism = organism
         else:
-            raise ImportingError("FeatureLoader requires an organism parameter")
+            raise ImportingError(
+                "FeatureLoader requires an organism parameter", file=filename
+            )
 
         super(FeatureLoader, self).__init__(source, filename, doi)
 
-    def store_tabix_GFF_feature(self, tabix_feature: GTFProxy, qtl: bool) -> None:
+    def store_tabix_GFF_feature(
+        self, tabix_feature: GTFProxy, qtl: bool, line: int = None
+    ) -> None:
         """Store tabix feature."""
         filecontent = "qtl" if qtl else "genome"
 
@@ -119,7 +129,8 @@ class FeatureLoader(FeatureLoaderBase):
                 )
             except ObjectDoesNotExist:
                 raise ImportingError(
-                    "{} is not a sequence ontology term.".format(tabix_feature.feature)
+                    "{} is not a sequence ontology term.".format(tabix_feature.feature),
+                    file=self.filename,
                 )
 
         attrs_id = attrs_dict.get("id")
@@ -154,8 +165,11 @@ class FeatureLoader(FeatureLoaderBase):
                 timeaccessioned=datetime.now(timezone.utc),
                 timelastmodified=datetime.now(timezone.utc),
             ).feature_id
-        except IntegrityError as e:
-            raise ImportingError("ID {} already registered. {}".format(attrs_id, e))
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(
+                "ID {} already registered. {}".format(attrs_id, e),
+                file=self.filename,
+            )
 
         # DOI: try to link feature to publication's DOI
         if feature_id and self.pub_dbxref_doi:
@@ -163,15 +177,17 @@ class FeatureLoader(FeatureLoaderBase):
                 FeaturePub.objects.get_or_create(
                     feature_id=feature_id, pub_id=self.pub_dbxref_doi.pub_id
                 )
-            except IntegrityError as e:
-                raise ImportingError(e)
+            except (IntegrityError, DataError) as e:
+                raise ImportingError(str(e), file=self.filename, line=line)
 
         srcdb = Db.objects.get(name="FASTA_SOURCE")
         try:
             srcdbxref = Dbxref.objects.get(accession=tabix_feature.contig, db=srcdb)
         except ObjectDoesNotExist as e:
             raise ImportingError(
-                "{} {} ({})".format(srcdb.name, tabix_feature.contig, e)
+                "{} {} ({}, file=self.filename, line=line)".format(
+                    srcdb.name, tabix_feature.contig, e
+                )
             )
         srcfeature = Feature.objects.filter(
             dbxref=srcdbxref, organism=self.organism
@@ -216,7 +232,7 @@ class FeatureLoader(FeatureLoaderBase):
                 locgroup=0,
                 rank=0,
             )
-        except IntegrityError as e:
+        except (IntegrityError, DataError) as e:
             print(
                 attrs_id,
                 srcdbxref,
@@ -225,7 +241,7 @@ class FeatureLoader(FeatureLoaderBase):
                 strand,
                 phase,
             )
-            raise ImportingError(e)
+            raise ImportingError(str(e), file=self.filename, line=line)
 
         # Process attrs_dict after the creation of the feature
         attrs_loader.process_attributes(feature_id, attrs_dict)
@@ -280,7 +296,9 @@ class FeatureLoader(FeatureLoaderBase):
                 "Parent/Feature ({}/{}) not registered.".format(object_id, subject_id)
             )
 
-    def store_tabix_VCF_feature(self, tabix_feature: VCFProxy) -> None:
+    def store_tabix_VCF_feature(
+        self, tabix_feature: VCFProxy, line: int = None
+    ) -> None:
         """Store tabix feature from VCF files."""
         attrs_loader = FeatureAttributesLoader(filecontent="polymorphism")
         attrs_dict = attrs_loader.get_attributes(tabix_feature.info)
@@ -293,16 +311,18 @@ class FeatureLoader(FeatureLoaderBase):
             attrs_class = attrs_dict.get("tsa")
         else:
             raise ImportingError(
-                "{}: Impossible to get the attribute which defines the type of variation (eg. TSA, VC)".format(
+                "{}: Impossible to get the attribute which defines the type of variation (eg. TSA, VC, file=self.filename, line=line)".format(
                     tabix_feature.id
-                )
+                ),
+                file=self.filename,
             )
 
         try:
             cvterm = retrieve_cvterm(cv="sequence", term=attrs_class)
         except ObjectDoesNotExist:
             raise ImportingError(
-                "{} is not a sequence ontology term.".format(attrs_class)
+                "{} is not a sequence ontology term.".format(attrs_class),
+                file=self.filename,
             )
 
         try:
@@ -326,9 +346,11 @@ class FeatureLoader(FeatureLoaderBase):
                 timeaccessioned=datetime.now(timezone.utc),
                 timelastmodified=datetime.now(timezone.utc),
             ).feature_id
-        except IntegrityError as e:
+        except (IntegrityError, DataError) as e:
             raise ImportingError(
-                "ID {} already registered. {}".format(tabix_feature.id, e)
+                "ID {} already registered. {}".format(tabix_feature.id, e),
+                file=self.filename,
+                line=line,
             )
 
         if tabix_feature.qual != ".":
@@ -347,15 +369,17 @@ class FeatureLoader(FeatureLoaderBase):
                 FeaturePub.objects.get_or_create(
                     feature_id=feature_id, pub_id=self.pub_dbxref_doi.pub_id
                 )
-            except IntegrityError as e:
-                raise ImportingError(e)
+            except (IntegrityError, DataError) as e:
+                raise ImportingError(str(e), file=self.filename, line=line)
 
         srcdb = Db.objects.get(name="FASTA_SOURCE")
         try:
             srcdbxref = Dbxref.objects.get(accession=tabix_feature.contig, db=srcdb)
         except ObjectDoesNotExist as e:
             raise ImportingError(
-                "{} {} ({})".format(srcdb.name, tabix_feature.contig, e)
+                "{} {} ({}, file=self.filename, line=line)".format(
+                    srcdb.name, tabix_feature.contig, e
+                )
             )
         srcfeature = Feature.objects.filter(
             dbxref=srcdbxref, organism=self.organism
@@ -383,9 +407,9 @@ class FeatureLoader(FeatureLoaderBase):
                 locgroup=0,
                 rank=0,
             )
-        except IntegrityError as e:
+        except (IntegrityError, DataError) as e:
             print(tabix_feature.id, srcdbxref, tabix_feature.pos)
-            raise ImportingError(e)
+            raise ImportingError(str(e), file=self.filename, line=line)
 
         # Alternative alleles
         rank = 1
@@ -401,9 +425,9 @@ class FeatureLoader(FeatureLoaderBase):
                     locgroup=0,
                     rank=rank,
                 )
-            except IntegrityError as e:
+            except (IntegrityError, DataError) as e:
                 print(tabix_feature.id, srcdbxref, tabix_feature.pos)
-                raise ImportingError(e)
+                raise ImportingError(str(e), file=self.filename, line=line)
             rank += 1
 
     def store_feature_annotation(
@@ -436,9 +460,10 @@ class FeatureLoader(FeatureLoaderBase):
             db_name, dbxref_accession = dbxref.split(":", 1)
         except ValueError:
             raise ImportingError(
-                "Incorrect DBxRef {}. It should have two colon-separated values (eg. DB:DBxREF).".format(
+                "Incorrect DBxRef {}. It should have two colon-separated values (eg. DB:DBxREF, file=self.filename).".format(
                     dbxref
-                )
+                ),
+                file=self.filename,
             )
         db_obj, created = Db.objects.get_or_create(name=db_name)
         dbxref_obj, created = Dbxref.objects.get_or_create(
@@ -457,7 +482,7 @@ class FeatureLoader(FeatureLoaderBase):
             doi_obj = Dbxref.objects.get(accession=doi.lower(), db__name="DOI")
             pub_obj = Pub.objects.get(PubDbxref_pub_Pub__dbxref=doi_obj)
         except ObjectDoesNotExist:
-            raise ImportingError("{} not registered.".format(doi))
+            raise ImportingError("{} not registered.".format(doi), file=self.filename)
 
         FeaturePub.objects.get_or_create(feature_id=feature_id, pub=pub_obj)
 
@@ -498,8 +523,8 @@ class FeatureLoader(FeatureLoaderBase):
             )
         except ObjectDoesNotExist:
             print("Feature from pair ({}/{}) not registered.".format(pair[0], pair[1]))
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)
 
     def store_feature_groups(
         self,
@@ -537,8 +562,8 @@ class FeatureLoader(FeatureLoaderBase):
                 )
             try:
                 Featureprop.objects.bulk_create(featureprops)
-            except IntegrityError as e:
-                raise ImportingError(e)
+            except (IntegrityError, DataError) as e:
+                raise ImportingError(str(e), file=self.filename)
 
 
 class MultispeciesFeatureLoader(FeatureLoaderBase):
@@ -702,5 +727,5 @@ class MultispeciesFeatureLoader(FeatureLoaderBase):
                 )
             try:
                 Featureprop.objects.bulk_create(featureprops)
-            except IntegrityError as e:
-                raise ImportingError(e)
+            except (IntegrityError, DataError) as e:
+                raise ImportingError(str(e), file=self.filename)

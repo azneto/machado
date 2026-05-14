@@ -14,7 +14,7 @@ from typing import Optional
 from Bio import BiopythonWarning
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Max
-from django.db.utils import IntegrityError
+from django.db.utils import IntegrityError, DataError
 
 from machado.loaders.analysis import AnalysisLoader
 from machado.loaders.common import retrieve_feature_id, retrieve_organism
@@ -48,6 +48,7 @@ class SimilarityLoader(object):
         description: str = None,
     ) -> None:
         """Execute the init function."""
+        self.filename = filename
         try:
             self.org_query = retrieve_organism(org_query)
             self.org_subject = retrieve_organism(org_subject)
@@ -74,10 +75,10 @@ class SimilarityLoader(object):
                 programversion=programversion,
                 timeexecuted=datetime.now(),
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=filename)
         except ObjectDoesNotExist as e:
-            raise ImportingError(e)
+            raise ImportingError(str(e), file=filename)
 
     def retrieve_id_from_description(self, description: str) -> Optional[str]:
         """Retrieve ID from description."""
@@ -104,7 +105,9 @@ class SimilarityLoader(object):
                 )
             except ObjectDoesNotExist as e2:
                 raise ImportingError(
-                    e1, e2, "Query {} {}".format(hsp.query_id, hsp.query_description)
+                    "Query {} {}".format(hsp.query_id, hsp.query_description),
+                    file=self.filename,
+                    context="{} | {}".format(e1, e2),
                 )
         return query_feature_id
 
@@ -124,7 +127,9 @@ class SimilarityLoader(object):
                 )
             except ObjectDoesNotExist as e2:
                 raise ImportingError(
-                    e1, e2, "Subject {} {}".format(hsp.hit_id, hsp.hit_description)
+                    "Subject {} {}".format(hsp.hit_id, hsp.hit_description),
+                    file=self.filename,
+                    context="{} | {}".format(e1, e2),
                 )
         return subject_feature_id
 
@@ -166,8 +171,8 @@ class SimilarityLoader(object):
                 normscore=normscore,
                 significance=significance,
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)
 
         Featureloc.objects.create(
             feature=match_part_feature,

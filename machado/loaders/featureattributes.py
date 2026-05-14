@@ -148,7 +148,7 @@ class FeatureAttributesLoader(object):
         try:
             cvterm_exact = Cvterm.objects.get(name="exact", cv__name="synonym_type")
         except ObjectDoesNotExist as e:
-            raise ImportingError(e)
+            raise ImportingError(str(e))
 
         # Don't forget to add the attribute to the constant VALID_GENOME_ATTRS
         for key in attrs:

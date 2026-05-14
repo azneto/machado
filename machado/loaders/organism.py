@@ -9,7 +9,7 @@
 from typing import List, Optional, Tuple
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.utils import IntegrityError
+from django.db.utils import IntegrityError, DataError
 
 from machado.loaders.common import retrieve_organism
 from machado.loaders.exceptions import ImportingError
@@ -39,8 +39,8 @@ class OrganismLoader(object):
                 is_relationshiptype=1,
                 dbxref_id=dbxref_synonym.dbxref_id,
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e))
 
     # 'description='gi|1003052167|emb|CZF77396.1| 2-succinyl-6-hydroxy-2,
     # 4-cyclohexadiene-1-carboxylate synthase [Grimontia marina]'''
@@ -99,6 +99,6 @@ class OrganismLoader(object):
             doi_obj = Dbxref.objects.get(accession=doi, db__name="DOI")
             pub_obj = Pub.objects.get(PubDbxref_pub_Pub__dbxref=doi_obj)
         except ObjectDoesNotExist:
-            raise ImportingError("{} not registered.", doi)
+            raise ImportingError("{} not registered.".format(doi))
 
         OrganismPub.objects.get_or_create(organism=organism_obj, pub=pub_obj)

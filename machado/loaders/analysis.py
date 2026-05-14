@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Union
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.utils import IntegrityError
+from django.db.utils import IntegrityError, DataError
 
 from machado.loaders.common import retrieve_organism, retrieve_feature_id
 from machado.loaders.exceptions import ImportingError
@@ -29,6 +29,7 @@ class AnalysisLoader(object):
         self.cvterm_contained_in = Cvterm.objects.get(
             name="located in", cv__name="relationship"
         )
+        self.filename = None
 
     def store_analysis(
         self,
@@ -42,14 +43,15 @@ class AnalysisLoader(object):
         description: str = None,
     ) -> Analysis:
         """Store analysis."""
+        self.filename = sourcename
         if isinstance(timeexecuted, str):
             # format is mandatory, e.g.: Oct-16-2016)
             # in settings.py set USE_TZ = False
             try:
                 date_format = "%b-%d-%Y"
                 timeexecuted = datetime.strptime(timeexecuted, date_format)
-            except IntegrityError as e:
-                raise ImportingError(e)
+            except (IntegrityError, DataError) as e:
+                raise ImportingError(str(e), file=self.filename)
         else:
             timeexecuted = datetime.now()
         # create assay object
@@ -68,10 +70,10 @@ class AnalysisLoader(object):
                 type_id=self.cvterm_contained_in.cvterm_id,
                 value=filename,
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=sourcename)
         except ObjectDoesNotExist as e:
-            raise ImportingError(e)
+            raise ImportingError(str(e), file=sourcename)
         return analysis
 
     def store_analysisprop(
@@ -82,8 +84,8 @@ class AnalysisLoader(object):
             Analysisprop.objects.create(
                 analysis=analysis, type_id=type_id, value=value, rank=rank
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)
 
     def store_quantification(
         self, analysis: Analysis, assayacc: str, assaydb: str = "SRA"
@@ -98,17 +100,17 @@ class AnalysisLoader(object):
         except ObjectDoesNotExist:
             assay = Assay.objects.get(name=assayacc)
         # then gives up
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)
 
         try:
             acquisition = Acquisition.objects.create(assay=assay, name=assayacc)
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)
         try:
             Quantification.objects.create(acquisition=acquisition, analysis=analysis)
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)
 
     def store_analysisfeature(
         self,
@@ -127,8 +129,8 @@ class AnalysisLoader(object):
         else:
             try:
                 organism = retrieve_organism(organism)
-            except IntegrityError as e:
-                raise ImportingError(e)
+            except (IntegrityError, DataError) as e:
+                raise ImportingError(str(e), file=self.filename)
         # retrieve feature
         if isinstance(feature, Feature):
             feature_id = feature.feature_id
@@ -146,5 +148,5 @@ class AnalysisLoader(object):
                 significance=significance,
                 identity=identity,
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=self.filename)

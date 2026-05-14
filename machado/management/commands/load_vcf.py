@@ -86,8 +86,12 @@ class Command(HistoryCommandMixin, BaseCommand):
         # Load the GFF3 file
         with open(file) as tbx_file:
             tbx = pysam.TabixFile(filename=tbx_file.name, index=index_file)
-            for row in tqdm(tbx.fetch(parser=pysam.asVCF()), total=get_num_lines(file)):
-                tasks.append(pool.submit(feature_file.store_tabix_VCF_feature, row))
+            for i, row in tqdm(
+                enumerate(tbx.fetch(parser=pysam.asVCF())), total=get_num_lines(file)
+            ):
+                tasks.append(
+                    pool.submit(feature_file.store_tabix_VCF_feature, row, line=i + 1)
+                )
 
                 if len(tasks) >= chunk_size:
                     for task in as_completed(tasks):

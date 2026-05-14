@@ -6,7 +6,7 @@
 
 """Project."""
 
-from django.db.utils import IntegrityError
+from django.db.utils import IntegrityError, DataError
 
 from machado.loaders.exceptions import ImportingError
 from machado.models import Cvterm, Project, Projectprop
@@ -19,12 +19,14 @@ class ProjectLoader(object):
 
     def __init__(self) -> None:
         """Execute the init function."""
+        self.filename = None
         self.cvterm_contained_in = Cvterm.objects.get(
             name="located in", cv__name="relationship"
         )
 
     def store_project(self, name: str, filename: str) -> Project:
         """Store project."""
+        self.filename = filename
         try:
             project, created = Project.objects.get_or_create(name=name)
             self.store_projectprop(
@@ -32,8 +34,8 @@ class ProjectLoader(object):
                 type_id=self.cvterm_contained_in.cvterm_id,
                 value=filename,
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=filename)
         return project
 
     def store_projectprop(
@@ -44,5 +46,5 @@ class ProjectLoader(object):
             projectprop, created = Projectprop.objects.get_or_create(
                 project=project, type_id=type_id, value=value, rank=rank
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e), file=value)

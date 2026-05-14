@@ -100,11 +100,15 @@ class Command(HistoryCommandMixin, BaseCommand):
         # Load the GFF3 file
         with open(file) as tbx_file:
             tbx = pysam.TabixFile(filename=tbx_file.name, index=index_file)
-            for row in tqdm(tbx.fetch(parser=pysam.asGTF()), total=get_num_lines(file)):
+            for i, row in tqdm(
+                enumerate(tbx.fetch(parser=pysam.asGTF())), total=get_num_lines(file)
+            ):
                 if ignore is not None and row.feature in ignore:
                     continue
                 tasks.append(
-                    pool.submit(feature_file.store_tabix_GFF_feature, row, qtl)
+                    pool.submit(
+                        feature_file.store_tabix_GFF_feature, row, qtl, line=i + 1
+                    )
                 )
 
                 if len(tasks) >= chunk_size:
