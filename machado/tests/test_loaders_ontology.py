@@ -27,7 +27,7 @@ class OntologyLoaderTest(TestCase):
 
     def test_init_already_exists(self):
         """Test init already exists."""
-        with self.assertRaisesRegex(ImportingError, "already registered"):
+        with self.assertRaisesRegex(ImportingError, "is already registered"):
             OntologyLoader(cv_name="sequence")
 
     def test_store_type_def(self):

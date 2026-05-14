@@ -21,19 +21,23 @@ from machado.loaders.ontology import OntologyLoader
 class Command(HistoryCommandMixin, BaseCommand):
     """Load gene ontology."""
 
-    help = "Load Gene Ontology"
+    help = "Load Gene Ontology (GO) from an OBO file"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
             "--file",
-            help="Gene Ontology file obo. Available "
-            "at http://www.geneontology.org/ontology/gene_ont"
-            "ology.obo",
+            help="Path to the Gene Ontology OBO file "
+            "(available at http://www.geneontology.org/ontology/gene_ontology.obo)",
             required=True,
             type=str,
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(self, file: str, cpu: int = 1, verbosity: int = 1, **options):
         """Execute the main function."""
@@ -45,7 +49,7 @@ class Command(HistoryCommandMixin, BaseCommand):
         cv_definition = G.graph["data-version"]
 
         if verbosity > 0:
-            self.stdout.write("Preprocessing")
+            self.stdout.write("Preprocessing data...")
 
         # Instantiating Ontology in order to have access to secondary cv, db,
         # cvterm, and dbxref, even though the main cv will not be used.
@@ -58,7 +62,7 @@ class Command(HistoryCommandMixin, BaseCommand):
         ontology = OntologyLoader("gene_ontology", cv_definition)
         # Load typedefs as Dbxrefs and Cvterm
         if verbosity > 0:
-            self.stdout.write("Loading typedefs ({} threads)".format(cpu))
+            self.stdout.write("Loading typedefs ({} threads)...".format(cpu))
 
         pool = ThreadPoolExecutor(max_workers=cpu)
         tasks = list()
@@ -70,7 +74,7 @@ class Command(HistoryCommandMixin, BaseCommand):
 
         # Load the cvterms
         if verbosity > 0:
-            self.stdout.write("Loading terms ({} threads)".format(cpu))
+            self.stdout.write("Loading terms ({} threads)...".format(cpu))
 
         lock = Lock()
         tasks = list()
@@ -82,7 +86,7 @@ class Command(HistoryCommandMixin, BaseCommand):
 
         # Load the relationship between cvterms
         if verbosity > 0:
-            self.stdout.write("Loading relationships ({} threads)".format(cpu))
+            self.stdout.write("Loading relationships ({} threads)...".format(cpu))
 
         tasks = list()
         for u, v, type in G.edges(keys=True):
@@ -93,4 +97,6 @@ class Command(HistoryCommandMixin, BaseCommand):
         pool.shutdown()
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done"))
+            self.stdout.write(
+                self.style.SUCCESS("Successfully processed Gene Ontology data.")
+            )

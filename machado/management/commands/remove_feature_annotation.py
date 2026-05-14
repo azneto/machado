@@ -15,23 +15,19 @@ from machado.loaders.common import retrieve_organism
 
 
 class Command(HistoryCommandMixin, BaseCommand):
-    """Remove organism."""
-
-    help = "Remove organism"
+    help = "Remove feature annotations of a specific type"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
             "--organism",
-            help="Species name (eg. Homo sapiens, Mus musculus)",
+            help="Scientific name of the species (optional)",
             required=False,
             type=str,
         )
         parser.add_argument(
             "--cvterm",
-            help="cvterm.name from cv "
-            "feature_property. (eg. display, note, product, "
-            "alias, ontology_term)",
+            help="Name of the feature property term (e.g., 'product', 'alias')",
             required=True,
             type=str,
         )
@@ -41,7 +37,11 @@ class Command(HistoryCommandMixin, BaseCommand):
         try:
             cvterm_obj = Cvterm.objects.get(name=cvterm, cv__name="feature_property")
         except ObjectDoesNotExist:
-            raise CommandError("cvterm does not exist in database!")
+            raise CommandError(
+                "The specified cvterm '{}' does not exist in the database.".format(
+                    cvterm
+                )
+            )
 
         try:
             organism_obj = retrieve_organism(organism)
@@ -55,4 +55,8 @@ class Command(HistoryCommandMixin, BaseCommand):
         feature_props.delete()
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("{} removed".format(count)))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "Successfully removed {} annotation(s).".format(count)
+                )
+            )

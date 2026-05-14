@@ -22,33 +22,37 @@ from machado.loaders.feature import FeatureLoader
 class Command(HistoryCommandMixin, BaseCommand):
     """Load feature annotation file."""
 
-    help = "Load two-column tab separated file containing feature name and "
-    "dbxref. Current annotation will be replaced."
+    help = "Load database cross-references (DBxRefs) for features from a tab-separated file"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
             "--file",
-            help="Two-column tab separated file. (feature.dbxref\\tdb:dbxref)",
+            help="Path to the tab-separated file (format: feature.dbxref\tdb:dbxref)",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--organism",
-            help="Species name (eg. Homo sapiens, Mus musculus)",
+            help="Scientific name of the species (e.g., Homo sapiens)",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--soterm",
-            help="SO Sequence Ontology Term (eg. mRNA, polypeptide)",
+            help="Sequence Ontology (SO) term (e.g., 'mRNA', 'polypeptide')",
             required=True,
             type=str,
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
         parser.add_argument(
             "--ignorenotfound",
-            help="Don't raise error and exit if feature not found",
+            help="Continue processing if a feature is not found",
             required=False,
             action="store_true",
         )
@@ -65,7 +69,7 @@ class Command(HistoryCommandMixin, BaseCommand):
     ):
         """Execute the main function."""
         if verbosity > 0:
-            self.stdout.write("Preprocessing")
+            self.stdout.write("Preprocessing data...")
 
         FileValidator().validate(file)
         organism = retrieve_organism(organism)
@@ -91,7 +95,7 @@ class Command(HistoryCommandMixin, BaseCommand):
                 )
 
         if verbosity > 0:
-            self.stdout.write("Loading features DBxRefs")
+            self.stdout.write("Loading data...")
 
         for task in tqdm(as_completed(tasks), total=len(tasks)):
             try:
@@ -107,7 +111,9 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("List of features not found:")
             for item in not_found:
-                self.stdout.write(f"{item}\n")
+                self.stdout.write("- {}\n".format(item))
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done"))
+            self.stdout.write(
+                self.style.SUCCESS("Successfully processed {}".format(filename))
+            )

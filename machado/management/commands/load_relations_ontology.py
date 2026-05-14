@@ -18,15 +18,13 @@ from machado.loaders.ontology import OntologyLoader
 class Command(HistoryCommandMixin, BaseCommand):
     """Load relations ontology."""
 
-    help = "Load Relations Ontology"
+    help = "Load Relations Ontology (RO) from an OBO file"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
             "--file",
-            help="Relations Ontology file obo. "
-            "Available at https://github.com/oborel/"
-            "obo-relations",
+            help="Path to the Relations Ontology (RO) OBO file",
             required=True,
             type=str,
         )
@@ -39,7 +37,7 @@ class Command(HistoryCommandMixin, BaseCommand):
             G = obonet.read_obo(obo_file)
 
         if verbosity > 0:
-            self.stdout.write("Preprocessing")
+            self.stdout.write("Preprocessing data...")
 
         cv_name = "relationship"
 
@@ -47,10 +45,10 @@ class Command(HistoryCommandMixin, BaseCommand):
         ontology = OntologyLoader(cv_name)
         # Load typedefs as Dbxrefs and Cvterm
         if verbosity > 0:
-            self.stdout.write("Loading typedefs")
+            self.stdout.write("Loading definitions...")
 
         for data in tqdm(G.graph["typedefs"], disable=False if verbosity > 0 else True):
             ontology.store_type_def(data)
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done"))
+            self.stdout.write(self.style.SUCCESS("Operation completed successfully."))

@@ -15,22 +15,37 @@ from machado.loaders.common import insert_organism
 class Command(HistoryCommandMixin, BaseCommand):
     """Insert organism."""
 
-    help = "Insert organism"
+    help = "Register a new organism in the database"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
-            "--abbreviation", help="abbreviation", required=False, type=str
-        )
-        parser.add_argument("--genus", help="genus", required=True, type=str)
-        parser.add_argument("--species", help="species", required=True, type=str)
-        parser.add_argument(
-            "--common_name", help="common name", required=False, type=str
+            "--abbreviation",
+            help="Abbreviated name (e.g., 'H. sapiens')",
+            required=False,
+            type=str,
         )
         parser.add_argument(
-            "--infraspecific_name", help="infraspecific name", required=False, type=str
+            "--genus", help="Genus name (e.g., 'Homo')", required=True, type=str
         )
-        parser.add_argument("--comment", help="comment", required=False, type=str)
+        parser.add_argument(
+            "--species", help="Species name (e.g., 'sapiens')", required=True, type=str
+        )
+        parser.add_argument(
+            "--common_name",
+            help="Common name of the organism",
+            required=False,
+            type=str,
+        )
+        parser.add_argument(
+            "--infraspecific_name",
+            help="Infraspecific name (e.g., strain or subspecies)",
+            required=False,
+            type=str,
+        )
+        parser.add_argument(
+            "--comment", help="Additional comments or notes", required=False, type=str
+        )
 
     def handle(
         self,
@@ -55,5 +70,7 @@ class Command(HistoryCommandMixin, BaseCommand):
         )
         if verbosity > 0:
             self.stdout.write(
-                self.style.SUCCESS("{} {} registered".format(genus, species))
+                self.style.SUCCESS(
+                    "Successfully registered organism '{} {}'.".format(genus, species)
+                )
             )

@@ -6,7 +6,7 @@
 
 """Treatment."""
 
-from django.db.utils import IntegrityError
+from django.db.utils import IntegrityError, DataError
 
 from machado.loaders.exceptions import ImportingError
 from machado.models import Biomaterial, Db, Dbxref
@@ -46,6 +46,6 @@ class TreatmentLoader(object):
                 name=name,
                 rank=rank,
             )
-        except IntegrityError as e:
-            raise ImportingError(e)
+        except (IntegrityError, DataError) as e:
+            raise ImportingError(str(e))
         return treatment

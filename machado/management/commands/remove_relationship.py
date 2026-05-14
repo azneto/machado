@@ -20,12 +20,15 @@ from machado.loaders.exceptions import ImportingError
 class Command(HistoryCommandMixin, BaseCommand):
     """Remove relationship."""
 
-    help = "Remove relationship"
+    help = "Remove feature relationships associated with a specific file"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
-            "--file", help="name of the file (e.g.: groups.txt", required=True, type=str
+            "--file",
+            help="Path to the file whose relationships should be removed",
+            required=True,
+            type=str,
         )
 
     def handle(self, file: str, verbosity: int = 0, **options):
@@ -37,7 +40,7 @@ class Command(HistoryCommandMixin, BaseCommand):
             raise ImportingError(e)
         filename = os.path.basename(file)
         if verbosity > 0:
-            self.stdout.write("Removing ...")
+            self.stdout.write("Removing relationships...")
         try:
             FeatureRelationship.objects.filter(
                 FeatureRelationshipprop_feature_relationship_FeatureRelationship__value=filename,
@@ -45,12 +48,15 @@ class Command(HistoryCommandMixin, BaseCommand):
             ).delete()
 
             if verbosity > 0:
-                self.stdout.write(self.style.SUCCESS("Done"))
+                self.stdout.write(
+                    self.style.SUCCESS("Operation completed successfully.")
+                )
         except IntegrityError as e:
             raise CommandError(
-                "It's not possible to delete every record. You must "
-                "delete relationships loaded after '{}' that might "
-                "depend on it. {}".format(filename, e)
+                "Unable to delete records. Please ensure that any relationships "
+                "dependent on '{}' are removed first. Error: {}".format(filename, e)
             )
         except ObjectDoesNotExist:
-            raise CommandError("Cannot remove '{}' (not registered)".format(filename))
+            raise CommandError(
+                "Cannot remove '{}' (not found in database).".format(filename)
+            )

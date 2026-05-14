@@ -15,25 +15,25 @@ from machado.management.commands._base import HistoryCommandMixin
 class Command(HistoryCommandMixin, BaseCommand):
     """Check IDs."""
 
-    help = "Check IDs"
+    help = "Verify the existence of feature IDs in the database"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
             "--file",
-            help="File containing a list of IDs in the first column.",
+            help="Path to the file containing a list of IDs in the first column",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--organism",
-            help="Species name (eg. Homo sapiens, Mus musculus)",
+            help="Scientific name of the species (e.g., Homo sapiens)",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--soterms",
-            help="SO Sequence Ontology Terms (eg. gene, mRNA, miRNA)",
+            help="Sequence Ontology (SO) terms to check (e.g., gene, mRNA, miRNA)",
             required=True,
             nargs="+",
             type=str,
@@ -44,7 +44,7 @@ class Command(HistoryCommandMixin, BaseCommand):
     ) -> None:
         """Execute the main function."""
         if verbosity > 0:
-            self.stdout.write("Loading")
+            self.stdout.write("Loading data...")
 
         FileValidator().validate(file)
         organism = retrieve_organism(organism)
@@ -61,11 +61,17 @@ class Command(HistoryCommandMixin, BaseCommand):
                 except ObjectDoesNotExist:
                     notfound.add(soterm)
                 except MultipleObjectsReturned:
-                    self.stdout.write(f"{accession} matches to multiple records\n")
+                    self.stdout.write(
+                        "Warning: '{}' matches multiple records.\n".format(accession)
+                    )
                     break
             if len(notfound) == len(soterms):
-                self.stdout.write(f"{accession} {str(notfound)} not found\n")
+                self.stdout.write(
+                    "ID '{}' not found for specified terms {}.\n".format(
+                        accession, sorted(list(notfound))
+                    )
+                )
         f.close()
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done"))
+            self.stdout.write(self.style.SUCCESS("ID verification completed."))

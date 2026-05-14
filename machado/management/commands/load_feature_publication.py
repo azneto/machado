@@ -20,30 +20,34 @@ from machado.loaders.feature import FeatureLoader
 class Command(HistoryCommandMixin, BaseCommand):
     """Load feature publication file."""
 
-    help = "Load two-column tab separated file containing feature name and "
-    "publication DOI."
+    help = "Load feature-publication associations from a tab-separated file"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
             "--file",
-            help="Two-column tab separated file. (feature.dbxref\\tpublication DOI)",
+            help="Path to the tab-separated file (format: feature_id\\tDOI)",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--organism",
-            help="Species name (eg. Homo sapiens, Mus musculus)",
+            help="Scientific name of the species (e.g., 'Homo sapiens')",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--soterm",
-            help="SO Sequence Ontology Term (eg. mRNA, polypeptide)",
+            help="Sequence Ontology (SO) term (e.g., 'mRNA', 'polypeptide')",
             required=True,
             type=str,
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(
         self,
@@ -56,7 +60,7 @@ class Command(HistoryCommandMixin, BaseCommand):
     ):
         """Execute the main function."""
         if verbosity > 0:
-            self.stdout.write("Preprocessing")
+            self.stdout.write("Preprocessing data...")
 
         FileValidator().validate(file)
         organism = retrieve_organism(organism)
@@ -81,10 +85,10 @@ class Command(HistoryCommandMixin, BaseCommand):
                 )
 
         if verbosity > 0:
-            self.stdout.write("Loading feature publications")
+            self.stdout.write("Loading data...")
         for task in tqdm(as_completed(tasks), total=len(tasks)):
             task.result()
         pool.shutdown()
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done"))
+            self.stdout.write(self.style.SUCCESS("Operation completed successfully."))

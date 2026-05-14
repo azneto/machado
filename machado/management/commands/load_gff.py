@@ -22,26 +22,26 @@ from machado.loaders.feature import FeatureLoader
 class Command(HistoryCommandMixin, BaseCommand):
     """Load GFF file."""
 
-    help = "Load GFF3 file indexed with tabix."
+    help = "Load genomic features from a GFF3 file (Tabix-indexed)"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
             "--file",
-            help="GFF3 genome file indexed with tabix"
+            help="Path to the GFF3 genome file indexed with tabix "
             "(see http://www.htslib.org/doc/tabix.html)",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--organism",
-            help="Species name (eg. Homo sapiens, Mus musculus)",
+            help="Scientific name of the species (e.g., Homo sapiens)",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--ignore",
-            help="List of feature types to ignore (eg. chromosome,scaffold)",
+            help="List of feature types to ignore (e.g., chromosome, scaffold)",
             required=False,
             nargs="+",
             type=str,
@@ -58,7 +58,12 @@ class Command(HistoryCommandMixin, BaseCommand):
             required=False,
             type=str,
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(
         self,
@@ -88,7 +93,9 @@ class Command(HistoryCommandMixin, BaseCommand):
                 index_file = "{}.csi".format(file)
                 FileValidator().validate(index_file)
             except ImportingError:
-                raise ImportingError("No tabix index found (.tbi or .csi)", file=file)
+                raise ImportingError(
+                    "Required Tabix index file (.tbi or .csi) not found.", file=file
+                )
         feature_file = FeatureLoader(
             filename=filename, source="GFF_SOURCE", organism=organism, doi=doi
         )
@@ -100,11 +107,15 @@ class Command(HistoryCommandMixin, BaseCommand):
         # Load the GFF3 file
         with open(file) as tbx_file:
             tbx = pysam.TabixFile(filename=tbx_file.name, index=index_file)
-            for row in tqdm(tbx.fetch(parser=pysam.asGTF()), total=get_num_lines(file)):
+            for i, row in tqdm(
+                enumerate(tbx.fetch(parser=pysam.asGTF())), total=get_num_lines(file)
+            ):
                 if ignore is not None and row.feature in ignore:
                     continue
                 tasks.append(
-                    pool.submit(feature_file.store_tabix_GFF_feature, row, qtl)
+                    pool.submit(
+                        feature_file.store_tabix_GFF_feature, row, qtl, line=i + 1
+                    )
                 )
 
                 if len(tasks) >= chunk_size:
@@ -119,7 +130,7 @@ class Command(HistoryCommandMixin, BaseCommand):
         pool.shutdown()
 
         if verbosity > 0:
-            self.stdout.write("Loading relationships")
+            self.stdout.write("Loading relationships...")
 
         pool = ThreadPoolExecutor(max_workers=cpu)
         tasks = list()
@@ -140,9 +151,11 @@ class Command(HistoryCommandMixin, BaseCommand):
         if feature_file.ignored_attrs is not None:
             self.stdout.write(
                 self.style.WARNING(
-                    "Ignored attrs: {}".format(feature_file.ignored_attrs)
+                    "Ignored attributes: {}".format(feature_file.ignored_attrs)
                 )
             )
 
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))
+            self.stdout.write(
+                self.style.SUCCESS("Successfully processed {}".format(filename))
+            )

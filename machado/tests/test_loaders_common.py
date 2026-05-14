@@ -93,14 +93,14 @@ class FieldsValidatorTest(TestCase):
 
     def test_nfields_fail(self):
         """Test nfields fail."""
-        with self.assertRaisesRegex(ImportingError, "differ from"):
+        with self.assertRaisesRegex(ImportingError, r"Found 2 fields, but expected 3"):
             self.validator.validate(3, ["f1", "f2"])
 
     def test_nullfields_fail(self):
         """Test nullfields fail."""
-        with self.assertRaisesRegex(ImportingError, "Found null or empty field"):
+        with self.assertRaisesRegex(ImportingError, "Empty or null field detected"):
             self.validator.validate(2, ["f1", ""])
-        with self.assertRaisesRegex(ImportingError, "Found null or empty field"):
+        with self.assertRaisesRegex(ImportingError, "Empty or null field detected"):
             self.validator.validate(2, ["f1", None])
 
 
@@ -142,7 +142,7 @@ class OrganismUtilsTest(TestCase):
     def test_insert_organism_already_exists(self):
         """Test insert organism already exists."""
         Organism.objects.create(genus="Genus", species="species")
-        with self.assertRaisesRegex(ImportingError, "already registered"):
+        with self.assertRaisesRegex(ImportingError, "is already registered"):
             insert_organism(genus="Genus", species="species")
 
     def test_retrieve_organism_success(self):
@@ -161,7 +161,7 @@ class OrganismUtilsTest(TestCase):
 
     def test_retrieve_organism_fail(self):
         """Test retrieve organism fail."""
-        with self.assertRaisesRegex(ObjectDoesNotExist, "not registered"):
+        with self.assertRaisesRegex(ObjectDoesNotExist, "is not registered"):
             retrieve_organism("Unknown species")
 
 
@@ -275,6 +275,6 @@ class CvtermUtilsTest(TestCase):
     def test_retrieve_cvterm_fail(self):
         """Test retrieve cvterm fail."""
         with self.assertRaisesRegex(
-            ImportingError, r"\(test_cv\).*ontology term not found"
+            ImportingError, r"\(test_cv\).*Ontology term 'unknown' not found"
         ):
             retrieve_cvterm("test_cv", "unknown")

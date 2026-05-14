@@ -29,14 +29,13 @@ from tqdm import tqdm
 class Command(HistoryCommandMixin, BaseCommand):
     """Remove analysis."""
 
-    help = "Remove analysis (CASCADE). Also remove related features that are"
-    "multispecies (features that were loaded from the analysis file only)."
+    help = "Remove analysis records and associated child data (CASCADE)"
 
     def add_arguments(self, parser):
         """Define the arguments."""
         parser.add_argument(
             "--name",
-            help="source filename (analysisprop.value)",
+            help="Name of the analysis file to remove (e.g., source filename)",
             required=True,
             type=str,
         )
@@ -45,7 +44,7 @@ class Command(HistoryCommandMixin, BaseCommand):
         """Execute the main function."""
         if verbosity > 0:
             self.stdout.write(
-                "Deleting {} and every child record (CASCADE)".format(name)
+                "Deleting analysis '{}' and all associated records...".format(name)
             )
 
         cvterm_contained_in = Cvterm.objects.get(
@@ -106,6 +105,10 @@ class Command(HistoryCommandMixin, BaseCommand):
                 # finally removes analysis...
                 analysis.delete()
             if verbosity > 0:
-                self.stdout.write(self.style.SUCCESS("Done"))
+                self.stdout.write(
+                    self.style.SUCCESS("Operation completed successfully.")
+                )
         else:
-            raise CommandError("Cannot remove {} (not registered)".format(name))
+            raise CommandError(
+                "Cannot remove '{}' (not found in database).".format(name)
+            )

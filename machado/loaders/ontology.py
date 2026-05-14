@@ -31,7 +31,9 @@ class OntologyLoader(object):
 
             if cv is not None:
                 raise ImportingError(
-                    "Cv -> cannot load {} (already registered)".format(cv_name)
+                    "Controlled Vocabulary (Cv) '{}' is already registered.".format(
+                        cv_name
+                    )
                 )
 
         except ObjectDoesNotExist:
@@ -237,7 +239,9 @@ class OntologyLoader(object):
                 is_relationshiptype=0,
             )
         except KeyError as e:
-            raise ImportingError("{}\nError loading {}".format(e, data))
+            raise ImportingError(
+                "Failed to load ontology term. Error: {}. Details: {}".format(e, data)
+            )
 
         # Definitions usually contain recurrent dbxrefs
         # will sometimes break since they're running concurrently with

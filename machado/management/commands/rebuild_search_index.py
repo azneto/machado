@@ -60,7 +60,9 @@ class Command(HistoryCommandMixin, BaseCommand):
         try:
             valid_types = settings.MACHADO_VALID_TYPES
         except AttributeError:
-            self.stderr.write("MACHADO_VALID_TYPES is not set in settings. Aborting.")
+            self.stderr.write(
+                "Critical error: MACHADO_VALID_TYPES is not defined in settings. Operation aborted."
+            )
             return
 
         overlapping_features = getattr(
@@ -126,7 +128,11 @@ class Command(HistoryCommandMixin, BaseCommand):
             search_vector=SearchVector("autocomplete_text", config="english")
         )
 
-        self.stdout.write(self.style.SUCCESS(f"  Done. {total} features indexed."))
+        self.stdout.write(
+            self.style.SUCCESS(
+                "Search index rebuild completed. Indexed {} features.".format(total)
+            )
+        )
 
     # ── Field preparation (ported from old search_indexes.py) ────────────
 

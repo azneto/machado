@@ -24,11 +24,16 @@ from django.db.utils import IntegrityError
 class Command(HistoryCommandMixin, BaseCommand):
     """Remove ontology."""
 
-    help = "Remove Ontology (CASCADE)"
+    help = "Remove an ontology and all its associated terms from the database (CASCADE)"
 
     def add_arguments(self, parser):
         """Define the arguments."""
-        parser.add_argument("--name", help="cv.name", required=True, type=str)
+        parser.add_argument(
+            "--name",
+            help="Name of the ontology (cv.name) to remove",
+            required=True,
+            type=str,
+        )
 
     def handle(self, name: str, verbosity: int = 1, **options):
         """Execute the main function."""
@@ -36,7 +41,7 @@ class Command(HistoryCommandMixin, BaseCommand):
             cv = Cv.objects.get(name=name)
             if verbosity > 0:
                 self.stdout.write(
-                    "Deleting {} and every child record (CASCADE)".format(name)
+                    "Deleting ontology '{}' and all associated terms...".format(name)
                 )
             cvterm_ids = list(
                 Cvterm.objects.filter(cv=cv).values_list("cvterm_id", flat=True)
@@ -62,12 +67,15 @@ class Command(HistoryCommandMixin, BaseCommand):
             cv.delete()
 
             if verbosity > 0:
-                self.stdout.write(self.style.SUCCESS("Done"))
+                self.stdout.write(
+                    self.style.SUCCESS("Operation completed successfully.")
+                )
         except IntegrityError as e:
             raise CommandError(
-                "It's not possible to delete every record. You must "
-                "delete ontologies loaded after '{}' that might depend "
-                "on it. {}".format(name, e)
+                "Unable to delete records. Please ensure that any ontologies "
+                "dependent on '{}' are removed first. Error: {}".format(name, e)
             )
         except ObjectDoesNotExist:
-            raise CommandError("Cannot remove '{}' (not registered)".format(name))
+            raise CommandError(
+                "Cannot remove '{}' (not found in database).".format(name)
+            )

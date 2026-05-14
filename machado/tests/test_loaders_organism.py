@@ -94,7 +94,7 @@ class OrganismLoaderTest(TestCase):
     def test_store_organism_publication_not_found(self):
         """Test store organism publication not found."""
         Organism.objects.create(genus="Genus", species="species")
-        with self.assertRaisesRegex(ImportingError, "not registered"):
+        with self.assertRaisesRegex(ImportingError, "is not registered"):
             self.loader.store_organism_publication(
                 "Genus species", "10.1234/nonexistent"
             )

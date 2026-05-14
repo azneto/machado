@@ -136,7 +136,7 @@ class SequenceLoaderTest(TestCase):
         """Test add sequence to feature fail."""
         loader = SequenceLoader("test.fa", self.org)
         seq_record = SeqRecord(Seq("ATGC"), id="nonexistent")
-        with self.assertRaisesRegex(ImportingError, "does NOT exist"):
+        with self.assertRaisesRegex(ImportingError, "does not exist"):
             loader.add_sequence_to_feature(seq_record, "gene")
 
     def test_store_biopython_seq_record_ignore_residues(self):

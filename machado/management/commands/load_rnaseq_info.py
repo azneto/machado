@@ -42,23 +42,28 @@ class Command(HistoryCommandMixin, BaseCommand):
         """Define the arguments."""
         parser.add_argument(
             "--file",
-            help="'.csv' file with sample and projects info.",
+            help="Path to the CSV file containing project and sample data",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--biomaterialdb",
-            help="Biomaterial database info (e.g.: 'GEO')",
+            help="Database name for biomaterials (e.g., 'GEO')",
             required=True,
             type=str,
         )
         parser.add_argument(
             "--assaydb",
-            help="Assay database info (e.g.: 'SRA')",
+            help="Database name for assays (e.g., 'SRA')",
             required=True,
             type=str,
         )
-        parser.add_argument("--cpu", help="Number of threads", default=1, type=int)
+        parser.add_argument(
+            "--cpu",
+            help="Number of threads for parallel processing",
+            default=1,
+            type=int,
+        )
 
     def handle(
         self,
@@ -136,4 +141,6 @@ class Command(HistoryCommandMixin, BaseCommand):
                 assay=assay_model, biomaterial=biomaterial_model
             )
         if verbosity > 0:
-            self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))
+            self.stdout.write(
+                self.style.SUCCESS("Successfully processed {}".format(filename))
+            )
