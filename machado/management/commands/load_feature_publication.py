@@ -9,13 +9,11 @@
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from machado.management.commands._base import HistoryCommandMixin
-from django.db.utils import IntegrityError
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator, retrieve_organism
-from machado.loaders.exceptions import ImportingError
 from machado.loaders.feature import FeatureLoader
 
 
@@ -60,24 +58,15 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("Preprocessing")
 
-        try:
-            FileValidator().validate(file)
-            organism = retrieve_organism(organism)
-        except ImportingError as e:
-            raise CommandError(e)
-        except IntegrityError as e:
-            raise ImportingError(e)
+        FileValidator().validate(file)
+        organism = retrieve_organism(organism)
 
         # retrieve only the file name
         filename = os.path.basename(file)
 
-        try:
-            feature_file = FeatureLoader(
-                filename=filename, source="PUBLICATION", organism=organism
-            )
-        except ImportingError as e:
-            raise CommandError(e)
-
+        feature_file = FeatureLoader(
+            filename=filename, source="PUBLICATION", organism=organism
+        )
         pool = ThreadPoolExecutor(max_workers=cpu)
         tasks = list()
 
@@ -94,10 +83,7 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("Loading feature publications")
         for task in tqdm(as_completed(tasks), total=len(tasks)):
-            try:
-                task.result()
-            except ImportingError as e:
-                raise CommandError(e)
+            task.result()
         pool.shutdown()
 
         if verbosity > 0:

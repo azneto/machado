@@ -12,7 +12,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError
 from machado.management.commands._base import HistoryCommandMixin
-from django.db.utils import IntegrityError
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator, retrieve_organism
@@ -68,24 +67,15 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("Preprocessing")
 
-        try:
-            FileValidator().validate(file)
-            organism = retrieve_organism(organism)
-        except ImportingError as e:
-            raise CommandError(e)
-        except IntegrityError as e:
-            raise ImportingError(e)
+        FileValidator().validate(file)
+        organism = retrieve_organism(organism)
 
         # retrieve only the file name
         filename = os.path.basename(file)
 
-        try:
-            feature_file = FeatureLoader(
-                filename=filename, source="GFF_source", organism=organism
-            )
-        except ImportingError as e:
-            raise CommandError(e)
-
+        feature_file = FeatureLoader(
+            filename=filename, source="GFF_source", organism=organism
+        )
         pool = ThreadPoolExecutor(max_workers=cpu)
         tasks = list()
         not_found = list()

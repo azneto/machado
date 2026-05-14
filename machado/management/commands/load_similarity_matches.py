@@ -17,7 +17,6 @@ from machado.management.commands._base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator
-from machado.loaders.exceptions import ImportingError
 from machado.loaders.feature import MultispeciesFeatureLoader
 
 warnings.simplefilter("ignore", BiopythonWarning)
@@ -45,10 +44,7 @@ class Command(HistoryCommandMixin, BaseCommand):
     ):
         """Execute the main function."""
         # retrieve only the file name
-        try:
-            FileValidator().validate(file)
-        except ImportingError as e:
-            raise CommandError(e)
+        FileValidator().validate(file)
         if format == "blast-xml":
             source = "BLAST_source"
         elif format == "interproscan-xml":
@@ -60,11 +56,7 @@ class Command(HistoryCommandMixin, BaseCommand):
             )
 
         filename = os.path.basename(file)
-        try:
-            feature_file = MultispeciesFeatureLoader(filename=filename, source=source)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        feature_file = MultispeciesFeatureLoader(filename=filename, source=source)
         if verbosity > 0:
             self.stdout.write("Processing file: {}".format(filename))
         try:
@@ -82,10 +74,7 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("Loading")
         for task in tqdm(as_completed(tasks), total=len(tasks)):
-            try:
-                task.result()
-            except ImportingError as e:
-                raise CommandError(e)
+            task.result()
         pool.shutdown()
 
         if len(feature_file.ignored_goterms) > 0:

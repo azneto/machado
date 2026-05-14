@@ -6,11 +6,10 @@
 
 """Insert organism."""
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from machado.management.commands._base import HistoryCommandMixin
 
 from machado.loaders.common import insert_organism
-from machado.loaders.exceptions import ImportingError
 
 
 class Command(HistoryCommandMixin, BaseCommand):
@@ -46,18 +45,14 @@ class Command(HistoryCommandMixin, BaseCommand):
     ) -> None:
         """Execute the main function."""
 
-        try:
-            insert_organism(
-                genus=genus,
-                species=species,
-                abbreviation=abbreviation,
-                common_name=common_name,
-                infraspecific_name=infraspecific_name,
-                comment=comment,
-            )
-        except ImportingError as e:
-            raise CommandError(e)
-
+        insert_organism(
+            genus=genus,
+            species=species,
+            abbreviation=abbreviation,
+            common_name=common_name,
+            infraspecific_name=infraspecific_name,
+            comment=comment,
+        )
         if verbosity > 0:
             self.stdout.write(
                 self.style.SUCCESS("{} {} registered".format(genus, species))

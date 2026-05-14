@@ -15,7 +15,6 @@ from machado.management.commands._base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator
-from machado.loaders.exceptions import ImportingError
 from machado.loaders.phylotree import PhylotreeLoader
 
 
@@ -70,12 +69,8 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("Preprocessing")
 
-        try:
-            FileValidator().validate(file)
-            phylotree = PhylotreeLoader(phylotree_name=name, organism_db=organismdb)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        FileValidator().validate(file)
+        phylotree = PhylotreeLoader(phylotree_name=name, organism_db=organismdb)
         file_nodes = open(file)
 
         self.nodes: Dict[int, Dict[str, Any]] = dict()

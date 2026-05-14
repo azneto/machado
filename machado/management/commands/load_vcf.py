@@ -10,9 +10,8 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pysam
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from machado.management.commands._base import HistoryCommandMixin
-from django.db.utils import IntegrityError
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator, get_num_lines, retrieve_organism
@@ -64,13 +63,8 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("Processing file: {}".format(filename))
 
-        try:
-            FileValidator().validate(file)
-            organism = retrieve_organism(organism)
-        except ImportingError as e:
-            raise CommandError(e)
-        except IntegrityError as e:
-            raise ImportingError(e)
+        FileValidator().validate(file)
+        organism = retrieve_organism(organism)
 
         try:
             index_file = "{}.tbi".format(file)
@@ -80,15 +74,10 @@ class Command(HistoryCommandMixin, BaseCommand):
                 index_file = "{}.csi".format(file)
                 FileValidator().validate(index_file)
             except ImportingError:
-                raise CommandError("No index found (.tbi/.csi)")
-
-        try:
-            feature_file = FeatureLoader(
-                filename=filename, source="VCF_SOURCE", organism=organism, doi=doi
-            )
-        except ImportingError as e:
-            raise CommandError(e)
-
+                raise ImportingError("No tabix index found (.tbi or .csi)", file=file)
+        feature_file = FeatureLoader(
+            filename=filename, source="VCF_SOURCE", organism=organism, doi=doi
+        )
         pool = ThreadPoolExecutor(max_workers=cpu)
         tasks = list()
 
@@ -102,17 +91,11 @@ class Command(HistoryCommandMixin, BaseCommand):
 
                 if len(tasks) >= chunk_size:
                     for task in as_completed(tasks):
-                        try:
-                            task.result()
-                        except ImportingError as e:
-                            raise CommandError(e)
+                        task.result()
                     tasks.clear()
             else:
                 for task in as_completed(tasks):
-                    try:
-                        task.result()
-                    except ImportingError as e:
-                        raise CommandError(e)
+                    task.result()
                 tasks.clear()
 
         pool.shutdown()

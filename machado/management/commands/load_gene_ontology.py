@@ -9,13 +9,12 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from multiprocessing import Lock
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from machado.management.commands._base import HistoryCommandMixin
 from obonet import read_obo
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator
-from machado.loaders.exceptions import ImportingError
 from machado.loaders.ontology import OntologyLoader
 
 
@@ -38,11 +37,7 @@ class Command(HistoryCommandMixin, BaseCommand):
 
     def handle(self, file: str, cpu: int = 1, verbosity: int = 1, **options):
         """Execute the main function."""
-        try:
-            FileValidator().validate(file)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        FileValidator().validate(file)
         # Load the ontology file
         with open(file) as obo_file:
             G = read_obo(obo_file)
@@ -56,15 +51,11 @@ class Command(HistoryCommandMixin, BaseCommand):
         # cvterm, and dbxref, even though the main cv will not be used.
         # There will be a ontology for each namespace, plus one called
         # gene_ontology for storing type_defs
-        try:
-            ontology = OntologyLoader("biological_process", cv_definition)
-            ontology = OntologyLoader("molecular_function", cv_definition)
-            ontology = OntologyLoader("cellular_component", cv_definition)
-            ontology = OntologyLoader("external", cv_definition)
-            ontology = OntologyLoader("gene_ontology", cv_definition)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        ontology = OntologyLoader("biological_process", cv_definition)
+        ontology = OntologyLoader("molecular_function", cv_definition)
+        ontology = OntologyLoader("cellular_component", cv_definition)
+        ontology = OntologyLoader("external", cv_definition)
+        ontology = OntologyLoader("gene_ontology", cv_definition)
         # Load typedefs as Dbxrefs and Cvterm
         if verbosity > 0:
             self.stdout.write("Loading typedefs ({} threads)".format(cpu))

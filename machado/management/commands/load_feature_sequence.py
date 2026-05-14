@@ -10,12 +10,11 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from Bio import SeqIO
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from machado.management.commands._base import HistoryCommandMixin
 from tqdm import tqdm
 
 from machado.loaders.common import FileValidator, retrieve_organism
-from machado.loaders.exceptions import ImportingError
 from machado.loaders.sequence import SequenceLoader
 
 
@@ -51,19 +50,11 @@ class Command(HistoryCommandMixin, BaseCommand):
         **options,
     ):
         """Execute the main function."""
-        try:
-            FileValidator().validate(file)
-            organism = retrieve_organism(organism)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        FileValidator().validate(file)
+        organism = retrieve_organism(organism)
         # retrieve only the file name
         filename = os.path.basename(file)
-        try:
-            sequence_file = SequenceLoader(filename=filename, organism=organism)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        sequence_file = SequenceLoader(filename=filename, organism=organism)
         if verbosity > 0:
             self.stdout.write("Processing file: {}".format(filename))
 

@@ -35,12 +35,12 @@ class FileValidator(object):
     def _exists(self, file_path: str) -> None:
         """Check whether a file exists."""
         if not os.path.exists(file_path):
-            raise ImportingError("{} does not exist".format(file_path))
+            raise ImportingError("does not exist", file=file_path)
 
     def _is_file(self, file_path: str) -> None:
         """Check whether file is actually a file type."""
         if not os.path.isfile(file_path):
-            raise ImportingError("{} is not a file".format(file_path))
+            raise ImportingError("is not a file", file=file_path)
 
     def _is_readable(self, file_path: str) -> None:
         """Check file is readable."""
@@ -48,7 +48,7 @@ class FileValidator(object):
             f = open(file_path, "r")
             f.close()
         except IOError:
-            raise ImportingError("{} is not readable".format(file_path))
+            raise ImportingError("is not readable", file=file_path)
 
 
 class FieldsValidator(object):
@@ -63,9 +63,8 @@ class FieldsValidator(object):
         """Check if number of fields are correct."""
         if len(fields) != nfields:
             raise ImportingError(
-                "Provided number of fields {} differ from {}".format(
-                    nfields, len(fields)
-                )
+                f"Provided number of fields {len(fields)} differ from expected {nfields}",
+                context="tabular_validation",
             )
 
     def _nullfields(self, fields: list) -> None:
@@ -73,7 +72,9 @@ class FieldsValidator(object):
         for field in fields:
             if field is None or field == "":
                 raise ImportingError(
-                    "Found null or empty field in position {}".format(counter)
+                    "Found null or empty field",
+                    field=str(counter),
+                    context="tabular_validation",
                 )
             counter += 1
 
@@ -248,4 +249,4 @@ def retrieve_cvterm(cv: str, term: str) -> Cvterm:
         return Cvtermsynonym.objects.get(synonym=term, cvterm__cv__name=cv).cvterm
 
     except ObjectDoesNotExist:
-        raise ImportingError("{} is not a {} ontology term.".format(term, cv))
+        raise ImportingError("ontology term not found", context=cv, field=term)

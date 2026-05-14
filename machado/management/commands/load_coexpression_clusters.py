@@ -76,11 +76,7 @@ The features need to be loaded previously or won't be registered."""
         except IntegrityError as e:
             raise ImportingError(e)
 
-        try:
-            FileValidator().validate(file)
-        except ImportingError as e:
-            raise CommandError(e)
-
+        FileValidator().validate(file)
         try:
             # retrieve only the file name
             clusters = open(file, "r")
@@ -112,11 +108,7 @@ The features need to be loaded previously or won't be registered."""
             name = ""
             fields = re.split(r"\s+", line.strip())
             nfields = len(fields)
-            try:
-                FieldsValidator().validate(nfields, fields)
-            except ImportingError as e:
-                raise CommandError(e)
-
+            FieldsValidator().validate(nfields, fields)
             if re.search(r"^(\w+)\:", fields[0]):
                 group_field = re.match(r"^(\w+)\:", fields[0])
                 name = group_field.group(1)

@@ -10,7 +10,7 @@ import os
 import re
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from machado.management.commands._base import HistoryCommandMixin
 
 from machado.loaders.assay import AssayLoader
@@ -75,27 +75,20 @@ class Command(HistoryCommandMixin, BaseCommand):
         if verbosity > 0:
             self.stdout.write("Processing file: {}".format(filename))
         # instantiate project, biomaterial and assay
-        try:
-            project_file = ProjectLoader()
-            biomaterial_file = BiomaterialLoader()
-            assay_file = AssayLoader()
-            treatment_file = TreatmentLoader()
-            FileValidator().validate(file)
-            rnaseq_data = open(file, "r")
-            # retrieve only the file name
-        except ImportingError as e:
-            raise CommandError(e)
-
+        project_file = ProjectLoader()
+        biomaterial_file = BiomaterialLoader()
+        assay_file = AssayLoader()
+        treatment_file = TreatmentLoader()
+        FileValidator().validate(file)
+        rnaseq_data = open(file, "r")
+        # retrieve only the file name
         # each line is an RNA-seq experiment
         # e.g:
         # Oryza sativa,GSE112368,GSM3068810,SRR6902930,heat leaf,Heat stress,Leaf,Jul-20-2018
         for line in rnaseq_data:
             fields = re.split(",", line.strip())
             organism_name = fields[0]
-            try:
-                FieldsValidator().validate(nfields, fields)
-            except ImportingError as e:
-                raise CommandError(e)
+            FieldsValidator().validate(nfields, fields)
             # get organism - mandatory
             try:
                 organism = retrieve_organism(organism=organism_name)
@@ -111,50 +104,36 @@ class Command(HistoryCommandMixin, BaseCommand):
                 raise ImportingError(e)
 
             # store biomaterial (sample)
-            try:
-                # e.g: "GSMxxxx" from GEO
-                biomaterial_model = biomaterial_file.store_biomaterial(
-                    db=biomaterialdb,
-                    acc=fields[2],
-                    organism=organism,
-                    name=fields[2],
-                    filename=filename,
-                    description=fields[6],
-                )
-            except ImportingError as e:
-                raise CommandError(e)
+            # e.g: "GSMxxxx" from GEO
+            biomaterial_model = biomaterial_file.store_biomaterial(
+                db=biomaterialdb,
+                acc=fields[2],
+                organism=organism,
+                name=fields[2],
+                filename=filename,
+                description=fields[6],
+            )
             # store treatment
-            try:
-                # e.g. "Heat"
-                treatment_model = treatment_file.store_treatment(
-                    name=fields[5], biomaterial=biomaterial_model
-                )
-            except ImportingError as e:
-                raise CommandError(e)
-            try:
-                biomaterial_file.store_biomaterial_treatment(
-                    biomaterial=biomaterial_model, treatment=treatment_model
-                )
-            except ImportingError as e:
-                raise CommandError(e)
-
+            # e.g. "Heat"
+            treatment_model = treatment_file.store_treatment(
+                name=fields[5], biomaterial=biomaterial_model
+            )
+            biomaterial_file.store_biomaterial_treatment(
+                biomaterial=biomaterial_model, treatment=treatment_model
+            )
             # store assay (experiment)
-            try:
-                # e.g. "SRRxxxx" from GEO
-                assay_model = assay_file.store_assay(
-                    db=assaydb,
-                    acc=fields[3],
-                    assaydate=fields[7],
-                    name=fields[3],
-                    filename=filename,
-                    description=fields[4],
-                )
-                assay_file.store_assay_project(assay=assay_model, project=project_model)
-                assay_file.store_assay_biomaterial(
-                    assay=assay_model, biomaterial=biomaterial_model
-                )
-            except ImportingError as e:
-                raise CommandError(e)
-
+            # e.g. "SRRxxxx" from GEO
+            assay_model = assay_file.store_assay(
+                db=assaydb,
+                acc=fields[3],
+                assaydate=fields[7],
+                name=fields[3],
+                filename=filename,
+                description=fields[4],
+            )
+            assay_file.store_assay_project(assay=assay_model, project=project_model)
+            assay_file.store_assay_biomaterial(
+                assay=assay_model, biomaterial=biomaterial_model
+            )
         if verbosity > 0:
             self.stdout.write(self.style.SUCCESS("Done with {}".format(filename)))

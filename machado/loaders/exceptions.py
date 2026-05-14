@@ -8,6 +8,24 @@
 
 
 class ImportingError(Exception):
-    """Handles importing errors."""
+    """Handles importing errors with contextual metadata."""
 
-    pass
+    def __init__(self, message, file=None, line=None, field=None, context=None):
+        self.message = message
+        self.file = file
+        self.line = line
+        self.field = field
+        self.context = context
+        super().__init__(self.message)
+
+    def __str__(self):
+        msg = self.message
+        if self.file:
+            msg = f"File: {self.file} - {msg}"
+        if self.line:
+            msg = f"Line {self.line}: {msg}"
+        if self.field:
+            msg = f"Field '{self.field}': {msg}"
+        if self.context:
+            msg = f"({self.context}) {msg}"
+        return msg
